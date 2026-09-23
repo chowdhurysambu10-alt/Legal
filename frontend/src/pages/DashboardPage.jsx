@@ -46,31 +46,31 @@ function getRiskBadge(score) {
   const s = (score || '').toUpperCase();
   if (s.includes('HIGH') || s.includes('CRITICAL')) {
     return (
-      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#fef2f2] text-[#b91c1c] border border-[#fecaca] inline-flex items-center gap-1">
-        <span className="w-1.5 h-1.5 rounded-full bg-[#ef4444]" />
+      <span className="px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider bg-[#fef2f2] text-[#b91c1c] border border-[#fecaca] inline-flex items-center gap-1.5">
+        <span className="w-2 h-2 rounded-full bg-[#ef4444]" />
         High Risk
       </span>
     );
   }
   if (s.includes('MEDIUM')) {
     return (
-      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#fef9ee] text-[#b45309] border border-[#fde68a] inline-flex items-center gap-1">
-        <span className="w-1.5 h-1.5 rounded-full bg-[#f59e0b]" />
+      <span className="px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider bg-[#fef9ee] text-[#b45309] border border-[#fde68a] inline-flex items-center gap-1.5">
+        <span className="w-2 h-2 rounded-full bg-[#f59e0b]" />
         Medium Risk
       </span>
     );
   }
   if (s.includes('LOW')) {
     return (
-      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#f0fdf4] text-[#15803d] border border-[#bbf7d0] inline-flex items-center gap-1">
-        <span className="w-1.5 h-1.5 rounded-full bg-[#22c55e]" />
+      <span className="px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider bg-[#f0fdf4] text-[#15803d] border border-[#bbf7d0] inline-flex items-center gap-1.5">
+        <span className="w-2 h-2 rounded-full bg-[#22c55e]" />
         Low Risk
       </span>
     );
   }
   return (
-    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#f4f7f4] text-[#4b644e] border border-[#d6e2d4] inline-flex items-center gap-1">
-      <span className="w-1.5 h-1.5 rounded-full bg-[#7a9e7d]" />
+    <span className="px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider bg-[#f4f7f4] text-[#3d5a41] border border-[#d6e2d4] inline-flex items-center gap-1.5">
+      <span className="w-2 h-2 rounded-full bg-[#7a9e7d]" />
       Analyzed
     </span>
   );
@@ -237,27 +237,27 @@ export default function DashboardPage() {
                     Workspace Ready
                   </span>
                 </div>
-                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight font-serif-editorial">
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight font-serif-editorial">
                   Welcome, {user?.name || user?.email?.split('@')[0] || 'Legal Counsel'}
                 </h1>
               </div>
 
               {/* Quick Workspace Stats */}
               <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
-                <div className="bg-white/10 backdrop-blur-xs border border-white/15 px-4 py-3 rounded-2xl flex flex-col items-center min-w-[90px]">
-                  <span className="text-2xl font-bold text-[#b4f070]">
+                <div className="bg-white/10 backdrop-blur-xs border border-white/15 px-5 py-3.5 rounded-2xl flex flex-col items-center min-w-[100px]">
+                  <span className="text-3xl font-extrabold text-[#b4f070]">
                     {documents.length}
                   </span>
-                  <span className="text-[10px] uppercase font-bold text-[#b0cab4] tracking-wider mt-0.5">
+                  <span className="text-xs uppercase font-extrabold text-[#b0cab4] tracking-wider mt-0.5">
                     Saved Contracts
                   </span>
                 </div>
 
-                <div className="bg-white/10 backdrop-blur-xs border border-white/15 px-4 py-3 rounded-2xl flex flex-col items-center min-w-[90px]">
-                  <span className="text-2xl font-bold text-amber-400">
+                <div className="bg-white/10 backdrop-blur-xs border border-white/15 px-5 py-3.5 rounded-2xl flex flex-col items-center min-w-[100px]">
+                  <span className="text-3xl font-extrabold text-amber-400">
                     {highRiskCount}
                   </span>
-                  <span className="text-[10px] uppercase font-bold text-[#b0cab4] tracking-wider mt-0.5">
+                  <span className="text-xs uppercase font-extrabold text-[#b0cab4] tracking-wider mt-0.5">
                     High Risk
                   </span>
                 </div>
@@ -270,7 +270,7 @@ export default function DashboardPage() {
           ======================================================== */}
           <div>
             <div className="flex items-center justify-between mb-3.5">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-[#4d6651]">
+              <h2 className="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-[#355339]">
                 Choose an Option
               </h2>
             </div>
@@ -279,44 +279,44 @@ export default function DashboardPage() {
               {/* Option 1: Upload New Contract */}
               <div
                 onClick={() => setUploadModalOpen(true)}
-                className="bg-white rounded-3xl border border-[#d8e6d5] p-5 sm:p-6 shadow-xs hover:shadow-md hover:border-[#9bc997] transition-all cursor-pointer group flex flex-col justify-between"
+                className="bg-white rounded-3xl border border-[#d8e6d5] p-6 sm:p-7 shadow-xs hover:shadow-md hover:border-[#9bc997] transition-all cursor-pointer group flex flex-col justify-between"
               >
                 <div>
                   <div className="w-12 h-12 rounded-2xl bg-[#edf6ec] text-[#285e26] border border-[#d1e6ce] flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
                     <UploadCloud size={24} className="text-[#3b872b]" />
                   </div>
-                  <h3 className="text-base font-bold text-[#18201a] group-hover:text-[#2d6e27] transition-colors">
+                  <h3 className="text-lg font-bold text-[#18201a] group-hover:text-[#2d6e27] transition-colors">
                     Upload New Contract
                   </h3>
-                  <p className="text-xs text-[#5f7963] mt-1.5 leading-relaxed">
+                  <p className="text-sm text-[#4d6651] mt-1.5 leading-relaxed">
                     Upload any PDF agreement to instantly extract key clauses, detect liabilities, and chat with AI.
                   </p>
                 </div>
 
-                <div className="mt-5 pt-3 border-t border-[#edf4ec] flex items-center justify-between text-xs font-bold text-[#2d6e27]">
+                <div className="mt-5 pt-3.5 border-t border-[#edf4ec] flex items-center justify-between text-xs sm:text-sm font-bold text-[#2d6e27]">
                   <span>Upload PDF</span>
-                  <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                  <ArrowRight size={15} className="group-hover:translate-x-1 transition-transform" />
                 </div>
               </div>
 
               {/* Option 2: Compare Contracts */}
               <div
                 onClick={() => navigate('/compare')}
-                className="bg-white rounded-3xl border border-[#d8e6d5] p-5 sm:p-6 shadow-xs hover:shadow-md hover:border-[#9bc997] transition-all cursor-pointer group flex flex-col justify-between"
+                className="bg-white rounded-3xl border border-[#d8e6d5] p-6 sm:p-7 shadow-xs hover:shadow-md hover:border-[#9bc997] transition-all cursor-pointer group flex flex-col justify-between"
               >
                 <div>
                   <div className="w-12 h-12 rounded-2xl bg-[#f2f7ef] text-[#285e26] border border-[#d5e7d2] flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
                     <Scale size={24} className="text-[#3b872b]" />
                   </div>
-                  <h3 className="text-base font-bold text-[#18201a] group-hover:text-[#2d6e27] transition-colors">
+                  <h3 className="text-lg font-bold text-[#18201a] group-hover:text-[#2d6e27] transition-colors">
                     Compare Contracts
                   </h3>
-                  <p className="text-xs text-[#5f7963] mt-1.5 leading-relaxed">
+                  <p className="text-sm text-[#4d6651] mt-1.5 leading-relaxed">
                     Compare two contract versions side-by-side to detect hidden discrepancies, changes, and risk deltas.
                   </p>
                 </div>
 
-                <div className="mt-5 pt-3 border-t border-[#edf4ec] flex items-center justify-between text-xs font-bold text-[#2d6e27]">
+                <div className="mt-5 pt-3.5 border-t border-[#edf4ec] flex items-center justify-between text-xs sm:text-sm font-bold text-[#2d6e27]">
                   <span>Start Comparison</span>
                   <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
                 </div>
@@ -426,43 +426,43 @@ export default function DashboardPage() {
                       </div>
 
                       {/* Filename */}
-                      <div className="flex items-start gap-2.5 mb-2">
-                        <div className="w-8 h-8 rounded-xl bg-[#edf6ec] text-[#2c6e26] flex items-center justify-center shrink-0 mt-0.5 border border-[#d6e7d3]">
-                          <FileText size={15} />
+                      <div className="flex items-start gap-3 mb-2.5">
+                        <div className="w-9 h-9 rounded-xl bg-[#edf6ec] text-[#2c6e26] flex items-center justify-center shrink-0 mt-0.5 border border-[#d6e7d3]">
+                          <FileText size={17} />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <h4 className="text-sm font-bold text-[#18201a] group-hover:text-[#2d6e27] transition-colors truncate" title={doc.filename}>
+                          <h4 className="text-base font-extrabold text-[#18201a] group-hover:text-[#2d6e27] transition-colors truncate" title={doc.filename}>
                             {doc.filename}
                           </h4>
-                          <span className="text-[11px] text-[#718d75] flex items-center gap-1 mt-0.5">
-                            <Clock size={11} />
+                          <span className="text-xs text-[#5f7b63] flex items-center gap-1 mt-0.5 font-medium">
+                            <Clock size={12} />
                             {formatUploadDate(doc.upload_date)}
                           </span>
                         </div>
                       </div>
 
                       {/* Meta Information */}
-                      <div className="flex items-center gap-3 text-[11px] text-[#557058] my-3 py-2 px-3 rounded-xl bg-[#f7faf6] border border-[#e5efe3]">
-                        <span><strong>{doc.page_count || 1}</strong> pages</span>
+                      <div className="flex items-center gap-3 text-xs text-[#446047] my-3 py-2 px-3 rounded-xl bg-[#f7faf6] border border-[#e5efe3] font-medium">
+                        <span><strong className="font-extrabold text-[#1c3320]">{doc.page_count || 1}</strong> pages</span>
                         <span>&bull;</span>
-                        <span><strong>{doc.chunk_count || 0}</strong> indexed clauses</span>
+                        <span><strong className="font-extrabold text-[#1c3320]">{doc.chunk_count || 0}</strong> indexed clauses</span>
                       </div>
 
                       {/* Summary Snippet if available */}
                       {doc.summary && (
-                        <p className="text-[11px] text-[#4b634e] line-clamp-2 leading-relaxed italic mb-3">
+                        <p className="text-xs sm:text-[13px] text-[#415a45] line-clamp-2 leading-relaxed italic mb-3">
                           "{doc.summary.replace(/###/g, '').replace(/\*\*/g, '').trim().slice(0, 140)}..."
                         </p>
                       )}
                     </div>
 
                     {/* Bottom Action Button */}
-                    <div className="pt-3 border-t border-[#edf4ec] flex items-center justify-between text-xs font-bold text-[#2d6e27]">
-                      <span className="group-hover:underline flex items-center gap-1">
-                        <Bot size={13} className="text-[#3b872b]" />
+                    <div className="pt-3.5 border-t border-[#edf4ec] flex items-center justify-between text-xs sm:text-sm font-bold text-[#2d6e27]">
+                      <span className="group-hover:underline flex items-center gap-1.5">
+                        <Bot size={15} className="text-[#3b872b]" />
                         <span>Open Analysis & Chat</span>
                       </span>
-                      <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                      <ArrowRight size={15} className="group-hover:translate-x-1 transition-transform" />
                     </div>
                   </div>
                 ))}

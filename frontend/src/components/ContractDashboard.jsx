@@ -113,7 +113,7 @@ function formatBold(str) {
   const parts = str.split(/(\*\*.*?\*\*)/g);
   return parts.map((part, i) => {
     if (part.startsWith('**') && part.endsWith('**')) {
-      return <strong key={i} className="font-bold text-[#112413]">{part.slice(2, -2)}</strong>;
+      return <strong key={i} className="font-extrabold text-[#0b1d0e]">{part.slice(2, -2)}</strong>;
     }
     return part;
   });
@@ -123,26 +123,26 @@ function renderMarkdown(text) {
   if (!text) return null;
   const lines = text.split('\n');
   return (
-    <div className="space-y-1.5 text-xs sm:text-[13px]">
+    <div className="space-y-2 text-sm sm:text-[15px] leading-relaxed">
       {lines.map((line, idx) => {
         const trimmed = line.trim();
-        if (!trimmed) return <div key={idx} className="h-1" />;
+        if (!trimmed) return <div key={idx} className="h-1.5" />;
         
         // Headings
         if (trimmed.startsWith('### ')) {
-          return <h4 key={idx} className="font-bold text-[#15341a] text-xs sm:text-[13px] mt-2 pb-0.5 border-b border-[#e5efe3]">{trimmed.slice(4)}</h4>;
+          return <h4 key={idx} className="font-extrabold text-[#15341a] text-sm sm:text-base mt-2.5 pb-1 border-b border-[#e5efe3]">{trimmed.slice(4)}</h4>;
         }
         if (trimmed.startsWith('## ')) {
-          return <h3 key={idx} className="font-bold text-[#15341a] text-sm mt-2">{trimmed.slice(3)}</h3>;
+          return <h3 key={idx} className="font-extrabold text-[#15341a] text-base sm:text-lg mt-3">{trimmed.slice(3)}</h3>;
         }
         if (trimmed.startsWith('# ')) {
-          return <h2 key={idx} className="font-bold text-[#15341a] text-base mt-2">{trimmed.slice(2)}</h2>;
+          return <h2 key={idx} className="font-extrabold text-[#15341a] text-lg sm:text-xl mt-3">{trimmed.slice(2)}</h2>;
         }
         
         // Blockquote
         if (trimmed.startsWith('> ')) {
           return (
-            <blockquote key={idx} className="pl-3 py-1 my-1 border-l-2 border-[#4da832] bg-[#f0f7ee] rounded-r-lg text-[11px] text-[#234225] italic font-mono">
+            <blockquote key={idx} className="pl-3.5 py-1.5 my-1.5 border-l-3 border-[#4da832] bg-[#f0f7ee] rounded-r-lg text-xs sm:text-sm text-[#234225] italic font-mono">
               {trimmed.slice(2)}
             </blockquote>
           );
@@ -152,8 +152,8 @@ function renderMarkdown(text) {
         if (trimmed.startsWith('* ') || trimmed.startsWith('- ')) {
           const content = trimmed.slice(2);
           return (
-            <div key={idx} className="flex items-start gap-1.5 pl-1 text-[#1f3322]">
-              <span className="text-[#3b872b] font-bold mt-0.5">•</span>
+            <div key={idx} className="flex items-start gap-2 pl-1 text-[#1c301f]">
+              <span className="text-[#3b872b] font-black mt-0.5 text-base leading-none">•</span>
               <span>{formatBold(content)}</span>
             </div>
           );
@@ -161,7 +161,7 @@ function renderMarkdown(text) {
         
         // Horizontal rule
         if (trimmed === '---' || trimmed === '***') {
-          return <hr key={idx} className="border-t border-[#dce8da] my-2" />;
+          return <hr key={idx} className="border-t border-[#dce8da] my-2.5" />;
         }
         
         return <p key={idx} className="text-[#1c301f] leading-relaxed">{formatBold(line)}</p>;
@@ -358,27 +358,27 @@ export default function ContractDashboard({
       )}
 
       {/* ========================================================
-          1. CONTRACT HEADER (Compact)
+          1. CONTRACT HEADER (Compact & Prominent)
       ======================================================== */}
-      <div className="bg-white rounded-2xl border border-[#dfe8dc] px-5 py-4 sm:px-6 sm:py-4.5 shadow-xs">
+      <div className="bg-white rounded-2xl border border-[#dfe8dc] px-5 py-4 sm:px-6 sm:py-5 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           {/* Left: Name, Type, Status */}
           <div className="flex flex-col gap-1.5 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-[11px] font-semibold text-[#2c4c2f] bg-[#eef5eb] border border-[#d6e7d3] px-2.5 py-0.5 rounded-full inline-flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#4da832]" />
+              <span className="text-xs font-bold text-[#224425] bg-[#eef5eb] border border-[#d6e7d3] px-3 py-1 rounded-full inline-flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-[#4da832]" />
                 Analyzed
               </span>
-              <span className="text-[11px] font-medium text-[#627a65] bg-[#f5f8f4] border border-[#e1ece0] px-2 py-0.5 rounded-full">
+              <span className="text-xs font-semibold text-[#506c53] bg-[#f5f8f4] border border-[#e1ece0] px-2.5 py-1 rounded-full">
                 {data.contractType}
               </span>
-              <span className="text-[11px] text-[#7d9480]">
+              <span className="text-xs font-medium text-[#718a74]">
                 {data.uploadDate}
               </span>
             </div>
 
             <div className="flex items-center gap-3">
-              <h1 className="text-xl sm:text-2xl font-bold text-[#18201a] tracking-tight font-serif-editorial truncate">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#18201a] tracking-tight font-serif-editorial truncate">
                 {data.contractName}
               </h1>
 
@@ -387,7 +387,7 @@ export default function ContractDashboard({
                 <select
                   value={document.id}
                   onChange={(e) => onSwitchContract(e.target.value)}
-                  className="text-xs bg-[#f4f8f2] border border-[#d8e5d5] text-[#2c472f] font-semibold rounded-full px-2.5 py-0.5 cursor-pointer focus:outline-none focus:border-[#4b6b4e] shrink-0"
+                  className="text-xs sm:text-sm bg-[#f4f8f2] border border-[#d8e5d5] text-[#244227] font-bold rounded-full px-3 py-1 cursor-pointer focus:outline-none focus:border-[#4b6b4e] shrink-0"
                 >
                   {allDocuments.map((doc) => (
                     <option key={doc.id} value={doc.id}>
@@ -400,26 +400,24 @@ export default function ContractDashboard({
           </div>
 
           {/* Right: Quick Action Buttons */}
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2.5 shrink-0">
             <button
               type="button"
               onClick={() => setShowFullContractModal(true)}
-              className="px-3.5 py-1.5 rounded-full border border-[#dce8da] bg-white hover:bg-[#fafcf9] text-xs font-bold text-[#2d4e30] inline-flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+              className="px-4 py-2 rounded-full border border-[#dce8da] bg-white hover:bg-[#fafcf9] text-xs sm:text-sm font-bold text-[#264829] inline-flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
             >
-              <FileText size={13} className="text-[#3b623f]" />
+              <FileText size={15} className="text-[#3b623f]" />
               <span>View Contract</span>
             </button>
 
             <button
               type="button"
               onClick={() => aiInputRef.current?.focus()}
-              className="btn-lime-pill px-3.5 py-1.5 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
+              className="btn-lime-pill px-4 py-2 text-xs sm:text-sm font-bold inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
             >
-              <Sparkles size={13} />
+              <Sparkles size={15} />
               <span>Ask AI</span>
             </button>
-
-
           </div>
         </div>
       </div>
@@ -429,13 +427,13 @@ export default function ContractDashboard({
           Dynamically modifies its layout, icons, and terms for ANY document type
       ======================================================== */}
       {data.dealHighlights && data.dealHighlights.length > 0 && (
-        <div className="bg-white rounded-2xl border border-[#dfe8dc] p-5 sm:p-6 shadow-xs flex flex-col gap-4">
+        <div className="bg-white rounded-2xl border border-[#dfe8dc] p-5 sm:p-7 shadow-xs flex flex-col gap-4">
           {/* Header Row */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#edf3ec]">
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-1.5">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-[11px] font-bold text-[#204a25] bg-[#eef7ec] border border-[#d2e8cd] px-2.5 py-0.5 rounded-full inline-flex items-center gap-1.5 uppercase tracking-wide">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#4da832]" />
+                <span className="text-xs sm:text-[13px] font-extrabold text-[#1a421f] bg-[#eef7ec] border border-[#d2e8cd] px-3 py-1 rounded-full inline-flex items-center gap-1.5 uppercase tracking-wide">
+                  <span className="w-2 h-2 rounded-full bg-[#4da832]" />
                   {data.contractCategory === 'rental'
                     ? 'Room Rental & Tenancy Deal Terms'
                     : data.contractCategory === 'employment'
@@ -446,11 +444,11 @@ export default function ContractDashboard({
                     ? 'Services & Commercial Deal Terms'
                     : 'Key Deal Terms & Highlights'}
                 </span>
-                <span className="text-[11px] font-semibold text-[#5e7761] bg-[#f4f7f3] border border-[#e2ece0] px-2 py-0.5 rounded-full">
+                <span className="text-xs font-bold text-[#4e6a51] bg-[#f4f7f3] border border-[#e2ece0] px-2.5 py-1 rounded-full">
                   {data.dealHighlights.length} Core Terms Identified
                 </span>
               </div>
-              <h2 className="text-lg sm:text-xl font-bold text-[#18201a] tracking-tight font-serif-editorial">
+              <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-[#18201a] tracking-tight font-serif-editorial">
                 {data.contractCategory === 'rental'
                   ? 'Key Room Rental Terms & Financial Overview'
                   : data.contractCategory === 'employment'
@@ -468,18 +466,18 @@ export default function ContractDashboard({
               <button
                 type="button"
                 onClick={() => setShowAllHighlights(!showAllHighlights)}
-                className="self-start sm:self-center px-3 py-1.5 rounded-full border border-[#d6e5d3] hover:border-[#9ec998] bg-[#f8faf7] hover:bg-[#edf5ea] text-xs font-bold text-[#254928] inline-flex items-center gap-1.5 transition-all cursor-pointer shrink-0"
+                className="self-start sm:self-center px-3.5 py-1.5 rounded-full border border-[#d6e5d3] hover:border-[#9ec998] bg-[#f8faf7] hover:bg-[#edf5ea] text-xs sm:text-sm font-bold text-[#224725] inline-flex items-center gap-1.5 transition-all cursor-pointer shrink-0"
               >
                 <span>{showAllHighlights ? 'Show Less' : `View All (${data.dealHighlights.length})`}</span>
-                {showAllHighlights ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                {showAllHighlights ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
               </button>
             )}
           </div>
 
           {/* Quick Summary Pill Banner (if available) */}
           {data.quickSummaryBanner && (
-            <div className="bg-[#f5f9f4] border border-[#d9e9d6] rounded-xl px-3.5 py-2 text-xs text-[#1e3b21] flex items-center gap-2">
-              <span className="font-bold text-[#2d5c31] shrink-0 uppercase tracking-wide text-[10px] bg-[#e4f2e0] px-2 py-0.5 rounded">
+            <div className="bg-[#f5f9f4] border border-[#d9e9d6] rounded-xl px-4 py-2.5 text-sm sm:text-[15px] font-medium text-[#1e3b21] flex items-center gap-2.5 leading-relaxed">
+              <span className="font-extrabold text-[#224b26] shrink-0 uppercase tracking-wider text-xs bg-[#e4f2e0] px-2.5 py-1 rounded">
                 Summary
               </span>
               <span className="truncate">{renderMarkdown(data.quickSummaryBanner)}</span>
@@ -487,42 +485,42 @@ export default function ContractDashboard({
           )}
 
           {/* Deal Cards Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {(showAllHighlights ? data.dealHighlights : data.dealHighlights.slice(0, 8)).map((item) => {
               const styles = getHighlightColorStyles(item.color);
               return (
                 <div
                   key={item.id}
                   onClick={() => handleAskAboutHighlight(item)}
-                  className={`group relative rounded-xl border p-3.5 transition-all duration-200 cursor-pointer flex flex-col justify-between gap-2.5 ${styles.bg} hover:shadow-xs active:scale-[0.99]`}
+                  className={`group relative rounded-2xl border p-4 sm:p-4.5 transition-all duration-200 cursor-pointer flex flex-col justify-between gap-3 ${styles.bg} hover:shadow-sm active:scale-[0.99]`}
                   title={`Click to ask AI about ${item.label}`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2">
-                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 shadow-2xs ${styles.iconBg}`}>
-                        {renderHighlightIcon(item.icon, 14)}
+                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-2xs ${styles.iconBg}`}>
+                        {renderHighlightIcon(item.icon, 16)}
                       </div>
-                      <span className={`text-[9.5px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-md border ${styles.badge}`}>
+                      <span className={`text-[10.5px] font-extrabold tracking-wider uppercase px-2 py-0.5 rounded-md border ${styles.badge}`}>
                         {item.category}
                       </span>
                     </div>
-                    <span className="text-[10px] font-semibold text-[#668268] group-hover:text-[#2c522f] transition-colors inline-flex items-center gap-0.5 opacity-0 group-hover:opacity-100">
+                    <span className="text-xs font-bold text-[#557657] group-hover:text-[#214724] transition-colors inline-flex items-center gap-1 opacity-0 group-hover:opacity-100">
                       <span>Ask AI</span>
-                      <ArrowRight size={10} />
+                      <ArrowRight size={11} />
                     </span>
                   </div>
 
-                  <div className="flex flex-col gap-0.5">
-                    <span className="text-[11px] font-medium text-[#5c735f]">
+                  <div className="flex flex-col gap-1">
+                    <span className="text-xs sm:text-[13px] font-extrabold text-[#3a583e] uppercase tracking-wider">
                       {item.label}
                     </span>
-                    <span className={`text-sm sm:text-base font-bold tracking-tight line-clamp-2 ${styles.text}`}>
+                    <span className={`text-xl sm:text-2xl lg:text-[25px] font-black tracking-tight leading-tight line-clamp-2 ${styles.text}`}>
                       {item.value}
                     </span>
                   </div>
 
                   {item.note && (
-                    <div className="pt-2 border-t border-black/5 text-[10.5px] text-[#637d66] italic leading-tight line-clamp-1">
+                    <div className="pt-2 border-t border-black/5 text-xs text-[#526f55] italic leading-snug line-clamp-2">
                       {item.note}
                     </div>
                   )}
@@ -545,22 +543,22 @@ export default function ContractDashboard({
         <div className="lg:col-span-7 xl:col-span-7 flex flex-col gap-3.5">
           <div className="px-1 flex items-baseline justify-between gap-2">
             <div>
-              <h2 className="text-lg sm:text-xl font-bold text-[#18201a] tracking-tight font-serif-editorial">
+              <h2 className="text-xl sm:text-2xl font-extrabold text-[#18201a] tracking-tight font-serif-editorial">
                 Important Clauses
               </h2>
             </div>
-            <span className="text-[11px] font-medium text-[#77907a]">
+            <span className="text-xs sm:text-[13px] font-semibold text-[#668269]">
               {data.clauses.length} clauses analyzed
             </span>
           </div>
 
           {/* Single-Column Stack of Compact Clause Cards */}
-          <div className="flex flex-col gap-3.5">
+          <div className="flex flex-col gap-4">
             {data.clauses.length === 0 ? (
               <div className="bg-white rounded-2xl border border-[#dfe8dc] p-8 text-center flex flex-col items-center justify-center shadow-xs">
-                <CheckCircle2 size={24} className="text-[#3b6e37] mb-2" />
-                <h4 className="text-sm font-bold text-[#18201a]">No High-Risk Clauses Flagged</h4>
-                <p className="text-xs text-[#5e7761] mt-1 max-w-sm">
+                <CheckCircle2 size={26} className="text-[#3b6e37] mb-2" />
+                <h4 className="text-base font-bold text-[#18201a]">No High-Risk Clauses Flagged</h4>
+                <p className="text-sm text-[#526e55] mt-1 max-w-sm">
                   This contract does not contain any detected high-risk liabilities, onerous indemnities, or unusual restrictions.
                 </p>
               </div>
@@ -570,7 +568,7 @@ export default function ContractDashboard({
               return (
                 <div
                   key={clause.id}
-                  className={`bg-white rounded-2xl border transition-all duration-200 p-4 sm:p-5 flex flex-col justify-between shadow-xs ${
+                  className={`bg-white rounded-2xl border transition-all duration-200 p-4.5 sm:p-6 flex flex-col justify-between shadow-xs ${
                     isExpanded
                       ? 'border-[#3b6e37] ring-1 ring-[#3b6e37]/20 shadow-sm'
                       : 'border-[#dfe8dc] hover:border-[#a2c29e]'
@@ -578,43 +576,43 @@ export default function ContractDashboard({
                 >
                   <div>
                     {/* Top: Risk Badge & Section Reference */}
-                    <div className="flex items-center justify-between gap-2 mb-2">
+                    <div className="flex items-center justify-between gap-2 mb-2.5">
                       {getRiskBadge(clause.severity)}
-                      <span className="text-[11px] font-medium text-[#77907b]">
+                      <span className="text-xs font-semibold text-[#6d8a71]">
                         {clause.sectionRef}
                       </span>
                     </div>
 
                     {/* Clause Title */}
-                    <h3 className="text-sm font-bold text-[#18201a] mb-2 leading-snug">
+                    <h3 className="text-base sm:text-lg font-extrabold text-[#18201a] mb-2.5 leading-snug">
                       {clause.title}
                     </h3>
 
                     {/* What it means (1 or 2 simple sentences) */}
-                    <div className="text-xs text-[#2c422f] leading-relaxed mb-2">
-                      <span className="font-bold text-[#1c301f]">What it means: </span>
+                    <div className="text-sm sm:text-[15px] text-[#223a26] leading-relaxed mb-2.5">
+                      <span className="font-extrabold text-[#0e2110]">What it means: </span>
                       <span>{clause.whatItMeans}</span>
                     </div>
 
                     {/* Why it matters (one short sentence) */}
-                    <div className="text-xs text-[#4b664e] leading-relaxed pb-2.5 border-b border-[#edf3ec]">
-                      <span className="font-bold text-[#1c301f]">Why it matters: </span>
+                    <div className="text-sm sm:text-[15px] text-[#345337] leading-relaxed pb-3 border-b border-[#edf3ec]">
+                      <span className="font-extrabold text-[#0e2110]">Why it matters: </span>
                       <span>{clause.whyItMatters}</span>
                     </div>
                   </div>
 
                   {/* Card Bottom: Who it affects & View Clause Toggle */}
-                  <div className="pt-3 flex items-center justify-between">
-                    <span className="text-[11px] font-semibold text-[#668069]">
-                      Affects: <span className="text-[#1c301f]">{clause.whoItAffects}</span>
+                  <div className="pt-3.5 flex items-center justify-between">
+                    <span className="text-xs sm:text-[13px] font-bold text-[#557158]">
+                      Affects: <span className="text-[#152918] font-extrabold">{clause.whoItAffects}</span>
                     </span>
                     <button
                       type="button"
                       onClick={() => setSelectedClauseId(isExpanded ? null : clause.id)}
-                      className="inline-flex items-center gap-1 text-xs font-bold text-[#2d562f] hover:text-[#18201a] transition-colors cursor-pointer"
+                      className="inline-flex items-center gap-1.5 text-xs sm:text-[13px] font-extrabold text-[#224b25] hover:text-[#18201a] transition-colors cursor-pointer"
                     >
                       <span>{isExpanded ? 'Hide Details' : 'View Clause'}</span>
-                      <ArrowRight size={12} className={`transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+                      <ArrowRight size={13} className={`transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
                     </button>
                   </div>
 
@@ -622,55 +620,55 @@ export default function ContractDashboard({
                       3. CLAUSE DETAILS (Expanded Inline)
                   ======================================================== */}
                   {isExpanded && (
-                    <div className="mt-4 pt-4 border-t border-[#e2ede0] flex flex-col gap-3 animate-fadeIn text-xs">
+                    <div className="mt-4 pt-4 border-t border-[#e2ede0] flex flex-col gap-3.5 animate-fadeIn text-xs sm:text-sm">
                       {/* CLAUSE (Original contract text) */}
                       <div>
-                        <div className="text-[10px] font-bold uppercase tracking-wider text-[#637d66] mb-1">
+                        <div className="text-xs font-extrabold uppercase tracking-wider text-[#48634c] mb-1.5">
                           Clause (Original Contract Text)
                         </div>
-                        <blockquote className="p-3.5 rounded-xl bg-[#fafcf9] border border-[#e0ece0] font-mono text-[11px] text-[#243726] leading-relaxed italic whitespace-pre-wrap">
+                        <blockquote className="p-4 rounded-xl bg-[#fafcf9] border border-[#e0ece0] font-mono text-xs sm:text-[13.5px] text-[#1c2e1f] leading-relaxed italic whitespace-pre-wrap">
                           "{clause.originalClause}"
                         </blockquote>
                       </div>
 
                       {/* IN SIMPLE WORDS */}
-                      <div className="p-3 rounded-xl bg-[#f5f9f3] border border-[#dbe7da]">
-                        <div className="text-[10px] font-bold uppercase tracking-wider text-[#2d562f] mb-0.5">
+                      <div className="p-3.5 sm:p-4 rounded-xl bg-[#f5f9f3] border border-[#dbe7da]">
+                        <div className="text-xs font-extrabold uppercase tracking-wider text-[#1e4722] mb-1">
                           In Simple Words
                         </div>
-                        <p className="text-xs text-[#263e29] leading-relaxed">
+                        <p className="text-sm sm:text-base text-[#1b341f] font-medium leading-relaxed">
                           {clause.whatItMeans}
                         </p>
                       </div>
 
                       {/* WHY IT MATTERS */}
-                      <div className="p-3 rounded-xl bg-[#f5f9f3] border border-[#dbe7da]">
-                        <div className="text-[10px] font-bold uppercase tracking-wider text-[#2d562f] mb-0.5">
+                      <div className="p-3.5 sm:p-4 rounded-xl bg-[#f5f9f3] border border-[#dbe7da]">
+                        <div className="text-xs font-extrabold uppercase tracking-wider text-[#1e4722] mb-1">
                           Why It Matters
                         </div>
-                        <p className="text-xs text-[#263e29] leading-relaxed">
+                        <p className="text-sm sm:text-base text-[#1b341f] font-medium leading-relaxed">
                           {clause.whyItMatters}
                         </p>
                       </div>
 
                       {/* WHO IT AFFECTS & SOURCE + Ask AI Shortcut */}
-                      <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-[#637d66] pt-1">
+                      <div className="flex flex-wrap items-center justify-between gap-2 text-xs sm:text-[13px] text-[#557158] pt-1.5">
                         <div className="flex items-center gap-3">
                           <span>
-                            <strong className="text-[#1c301f]">Who it affects:</strong> {clause.whoItAffects}
+                            <strong className="text-[#132716] font-extrabold">Who it affects:</strong> {clause.whoItAffects}
                           </span>
                           <span>&bull;</span>
                           <span>
-                            <strong className="text-[#1c301f]">Source:</strong> {clause.sectionRef}
+                            <strong className="text-[#132716] font-extrabold">Source:</strong> {clause.sectionRef}
                           </span>
                         </div>
 
                         <button
                           type="button"
                           onClick={() => handleAskAboutClause(clause.title)}
-                          className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#2d562f] hover:underline cursor-pointer"
+                          className="inline-flex items-center gap-1.5 text-xs sm:text-[13px] font-bold text-[#224b25] hover:underline cursor-pointer"
                         >
-                          <Sparkles size={11} className="text-[#4da832]" />
+                          <Sparkles size={12} className="text-[#4da832]" />
                           <span>Ask AI about this clause &rarr;</span>
                         </button>
                       </div>
@@ -692,15 +690,15 @@ export default function ContractDashboard({
             <div className="flex items-center justify-between pb-3.5 border-b border-[#edf3ec]">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-[#18201a] text-white flex items-center justify-center shrink-0 shadow-xs relative">
-                  <Bot size={20} className="text-[#b4f070]" />
+                  <Bot size={22} className="text-[#b4f070]" />
                   <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-[#22c55e] border-2 border-white rounded-full"></span>
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="text-base font-bold text-[#18201a] leading-tight">
+                    <h3 className="text-base sm:text-lg font-extrabold text-[#18201a] leading-tight">
                       Legal AI Chatbot
                     </h3>
-                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#eaf7e6] text-[#2c6e26] border border-[#cbe6c4]">
+                    <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-[#eaf7e6] text-[#245c20] border border-[#cbe6c4]">
                       Online
                     </span>
                   </div>
@@ -711,7 +709,7 @@ export default function ContractDashboard({
                 <button
                   type="button"
                   onClick={handleClearChat}
-                  className="px-2.5 py-1.5 rounded-xl text-[#658269] hover:text-[#b91c1c] hover:bg-[#fef2f2] text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer border border-transparent hover:border-[#fecaca]"
+                  className="px-3 py-1.5 rounded-xl text-[#537057] hover:text-[#b91c1c] hover:bg-[#fef2f2] text-xs sm:text-[13px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer border border-transparent hover:border-[#fecaca]"
                   title="Clear chat conversation"
                 >
                   <RotateCcw size={13} />
@@ -722,10 +720,10 @@ export default function ContractDashboard({
 
             {/* Quick Action Prompt Chips */}
             <div>
-              <span className="text-[11px] font-bold text-[#627f65] uppercase tracking-wider block mb-2">
+              <span className="text-xs font-extrabold text-[#48664c] uppercase tracking-wider block mb-2">
                 Quick Prompts:
               </span>
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex flex-wrap gap-2">
                 {[
                   '👋 Say Hi',
                   '💰 Rent & Deposit',
@@ -743,7 +741,7 @@ export default function ContractDashboard({
                       key={i}
                       type="button"
                       onClick={() => handleAskAI(query)}
-                      className="text-xs font-medium px-3 py-1.5 rounded-full bg-[#f4f8f3] hover:bg-[#e8f3e6] text-[#213f24] border border-[#d6e5d3] hover:border-[#9ec998] transition-all cursor-pointer active:scale-95"
+                      className="text-xs sm:text-[13px] font-bold px-3.5 py-1.5 rounded-full bg-[#f4f8f3] hover:bg-[#e8f3e6] text-[#1c3c20] border border-[#d6e5d3] hover:border-[#9ec998] transition-all cursor-pointer active:scale-95"
                     >
                       {chip}
                     </button>
@@ -753,18 +751,18 @@ export default function ContractDashboard({
             </div>
 
             {/* Conversation Messages Stream */}
-            <div className="flex flex-col gap-3.5 max-h-[380px] overflow-y-auto pr-1 border-t border-[#edf3ec] pt-3">
+            <div className="flex flex-col gap-4 max-h-[420px] overflow-y-auto pr-1 border-t border-[#edf3ec] pt-3">
               {chatHistory.length === 0 ? (
                 /* Empty Chat Welcome State */
-                <div className="p-4 rounded-2xl bg-[#f8faf7] border border-[#e2ece0] text-center flex flex-col items-center gap-2">
-                  <div className="w-9 h-9 rounded-xl bg-[#edf6eb] text-[#2e6829] flex items-center justify-center">
-                    <Sparkles size={18} />
+                <div className="p-5 rounded-2xl bg-[#f8faf7] border border-[#e2ece0] text-center flex flex-col items-center gap-2.5">
+                  <div className="w-10 h-10 rounded-xl bg-[#edf6eb] text-[#255e21] flex items-center justify-center">
+                    <Sparkles size={20} />
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-[#18201a]">
+                    <h4 className="text-sm font-extrabold text-[#18201a]">
                       Hello! I'm your Legal AI Assistant.
                     </h4>
-                    <p className="text-[11px] text-[#5e7761] mt-0.5 max-w-[260px] mx-auto leading-relaxed">
+                    <p className="text-xs sm:text-[13px] text-[#4d6b50] mt-1 max-w-[280px] mx-auto leading-relaxed">
                       I have analyzed <strong>{document?.filename || 'your contract'}</strong>. Click a prompt above or ask any question below!
                     </p>
                   </div>
@@ -775,21 +773,21 @@ export default function ContractDashboard({
                   const isSourcesOpen = !!expandedSources[idx];
 
                   return (
-                    <div key={idx} className="flex flex-col gap-2">
+                    <div key={idx} className="flex flex-col gap-2.5">
                       {/* User Query Bubble */}
-                      <div className="self-end max-w-[90%] bg-[#18201a] text-white px-3.5 py-2.5 rounded-2xl rounded-tr-xs shadow-2xs">
-                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-[#b4f070] mb-0.5">
-                          <User size={11} />
+                      <div className="self-end max-w-[90%] bg-[#18201a] text-white px-4 py-3 rounded-2xl rounded-tr-xs shadow-2xs">
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-[#b4f070] mb-1">
+                          <User size={13} />
                           <span>You</span>
                         </div>
-                        <p className="text-xs sm:text-[13px] leading-relaxed">{item.question}</p>
+                        <p className="text-sm sm:text-[15px] font-medium leading-relaxed">{item.question}</p>
                       </div>
 
                       {/* AI Response Bubble */}
-                      <div className="self-start max-w-[95%] w-full bg-[#fbfdfa] border border-[#dbe8d8] p-3.5 sm:p-4 rounded-2xl rounded-tl-xs shadow-2xs text-xs sm:text-[13px] text-[#1c301f]">
-                        <div className="flex items-center justify-between gap-2 mb-2 pb-1.5 border-b border-[#edf3ec]">
-                          <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#2d6e27]">
-                            <Bot size={13} className="text-[#3b872b]" />
+                      <div className="self-start max-w-[95%] w-full bg-[#fbfdfa] border border-[#dbe8d8] p-4 sm:p-5 rounded-2xl rounded-tl-xs shadow-2xs text-sm sm:text-[15px] text-[#1a2f1c]">
+                        <div className="flex items-center justify-between gap-2 mb-2.5 pb-2 border-b border-[#edf3ec]">
+                          <div className="flex items-center gap-2 text-xs sm:text-sm font-extrabold text-[#1e5219]">
+                            <Bot size={16} className="text-[#3b872b]" />
                             <span>Legal AI Assistant</span>
                           </div>
 
@@ -797,17 +795,17 @@ export default function ContractDashboard({
                             <button
                               type="button"
                               onClick={() => handleCopyText(item.answer, idx)}
-                              className="text-[10px] text-[#69826c] hover:text-[#18201a] flex items-center gap-1 cursor-pointer transition-colors"
+                              className="text-xs text-[#57755b] hover:text-[#18201a] font-bold flex items-center gap-1 cursor-pointer transition-colors"
                               title="Copy answer"
                             >
                               {copiedIdx === idx ? (
                                 <>
-                                  <Check size={11} className="text-[#2c6e26]" />
+                                  <Check size={13} className="text-[#2c6e26]" />
                                   <span className="text-[#2c6e26] font-bold">Copied</span>
                                 </>
                               ) : (
                                 <>
-                                  <Copy size={11} />
+                                  <Copy size={13} />
                                   <span>Copy</span>
                                 </>
                               )}
@@ -821,32 +819,32 @@ export default function ContractDashboard({
 
                             {/* Citations Accordion */}
                             {hasCitations && (
-                              <div className="mt-3 pt-2.5 border-t border-[#e5efe3]">
+                              <div className="mt-3.5 pt-3 border-t border-[#e5efe3]">
                                 <button
                                   type="button"
                                   onClick={() => toggleSources(idx)}
-                                  className="flex items-center gap-1.5 text-[11px] font-bold text-[#2c6e26] hover:underline cursor-pointer"
+                                  className="flex items-center gap-1.5 text-xs sm:text-[13px] font-extrabold text-[#22551e] hover:underline cursor-pointer"
                                 >
-                                  <BookOpen size={12} />
+                                  <BookOpen size={14} />
                                   <span>
                                     {isSourcesOpen ? 'Hide' : 'View'} {item.citations.length} verified clause citations
                                   </span>
                                 </button>
 
                                 {isSourcesOpen && (
-                                  <div className="mt-2 flex flex-col gap-1.5">
+                                  <div className="mt-2.5 flex flex-col gap-2">
                                     {item.citations.map((c, cIdx) => (
                                       <div
                                         key={cIdx}
-                                        className="p-2.5 rounded-xl bg-white border border-[#dfe8dc] text-[11px]"
+                                        className="p-3 rounded-xl bg-white border border-[#dfe8dc] text-xs sm:text-[13px]"
                                       >
-                                        <div className="flex justify-between text-[#69826c] font-bold text-[9px] uppercase tracking-wider mb-0.5">
+                                        <div className="flex justify-between text-[#57755b] font-extrabold text-[10px] uppercase tracking-wider mb-1">
                                           <span>Page {c.page || 1} &bull; Verified Clause</span>
-                                          <span className="text-[#2c6e26]">
+                                          <span className="text-[#23581f]">
                                             {Math.round((c.relevance || 0.9) * 100)}% Match
                                           </span>
                                         </div>
-                                        <div className="font-mono text-[#283b2a] italic text-[10px] leading-relaxed">
+                                        <div className="font-mono text-[#203222] italic text-xs leading-relaxed">
                                           "{c.excerpt}"
                                         </div>
                                       </div>
@@ -857,7 +855,7 @@ export default function ContractDashboard({
                             )}
                           </>
                         ) : (
-                          <div className="flex items-center gap-2.5 py-1 text-xs text-[#527055]">
+                          <div className="flex items-center gap-2.5 py-1 text-sm text-[#466549] font-medium">
                             <span className="inline-block w-4 h-4 border-2 border-[#3b6e37] border-t-transparent rounded-full animate-spin" />
                             <span>Reviewing contract & drafting answer...</span>
                           </div>
@@ -872,7 +870,7 @@ export default function ContractDashboard({
             </div>
 
             {/* Question Input Field */}
-            <div className="pt-2 border-t border-[#edf3ec]">
+            <div className="pt-2.5 border-t border-[#edf3ec]">
               <div className="flex items-center gap-2">
                 <input
                   ref={aiInputRef}
@@ -881,18 +879,18 @@ export default function ContractDashboard({
                   value={aiQuestion}
                   onChange={(e) => setAiQuestion(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleAskAI()}
-                  className="flex-1 px-4 py-3 rounded-2xl bg-[#fafcf9] border border-[#cfdfcd] text-xs sm:text-sm text-[#18201a] placeholder:text-[#8ba28d] focus:outline-none focus:border-[#3d6e3c] focus:bg-white focus:ring-2 focus:ring-[#85d045]/30 transition-all shadow-2xs"
+                  className="flex-1 px-4 py-3 rounded-2xl bg-[#fafcf9] border border-[#cfdfcd] text-sm sm:text-base text-[#18201a] placeholder:text-[#8ba28d] focus:outline-none focus:border-[#3d6e3c] focus:bg-white focus:ring-2 focus:ring-[#85d045]/30 transition-all shadow-2xs font-medium"
                 />
                 <button
                   type="button"
                   onClick={() => handleAskAI()}
                   disabled={aiLoading || !aiQuestion.trim()}
-                  className="btn-dark-pill px-4 sm:px-5 py-3 text-xs sm:text-sm font-bold inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shrink-0 shadow-xs"
+                  className="btn-dark-pill px-5 sm:px-6 py-3 text-sm sm:text-base font-bold inline-flex items-center gap-2 cursor-pointer disabled:opacity-50 shrink-0 shadow-xs"
                 >
                   {aiLoading ? (
                     <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   ) : (
-                    <Send size={14} className="text-[#b4f070]" />
+                    <Send size={16} className="text-[#b4f070]" />
                   )}
                   <span>Ask</span>
                 </button>
