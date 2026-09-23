@@ -1,0 +1,101 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-serif: 'Newsreader', 'Instrument Serif', Georgia, serif;
+    --font-mono: 'JetBrains Mono', monospace;
+
+    /* Color Tokens from Reference */
+    --color-bg-sand: #fbf9f4;
+    --color-bg-sage: #9bb399;
+    --color-lime: #b6f071;
+    --color-lime-hover: #a3e659;
+    --color-lime-text: #13240c;
+    --color-dark: #19201a;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: #f7f9f6;
+    color: #1a201c;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* Color Tokens from Behance Reference */
+.font-serif-editorial {
+  font-family: 'Newsreader', 'Instrument Serif', Georgia, serif;
+}
+
+/* Warm Creamy Sand to Sage Green Gradient from Behance */
+.bg-sage-backdrop {
+  background: radial-gradient(circle at 50% 8%, #fbf9f4 0%, #f1ebe0 35%, #d8e5d5 70%, #9cb799 100%);
+}
+
+.bg-sage-page {
+  background: linear-gradient(180deg, #f9f8f4 0%, #f2eee6 30%, #e5ede3 70%, #d5e3d2 100%);
+}
+
+/* Subtle Technical Grid Lines Overlay (from the Behance visual) */
+.bg-grid-overlay {
+  background-image: 
+    linear-gradient(to right, rgba(35, 52, 38, 0.045) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(35, 52, 38, 0.045) 1px, transparent 1px);
+  background-size: 34px 34px;
+}
+
+/* Luminous Lime / Chartreuse Button (exact match to Behance reference primary button) */
+.btn-lime-pill {
+  background-color: #b4f070;
+  color: #13240c;
+  font-weight: 700;
+  border-radius: 9999px;
+  box-shadow: 0 4px 14px rgba(138, 204, 61, 0.35);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.btn-lime-pill:hover {
+  background-color: #a4e95a;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(138, 204, 61, 0.45);
+}
+.btn-lime-pill:active {
+  transform: translateY(0);
+}
+
+/* Dark Charcoal Pill Button (matching Behance secondary button) */
+.btn-dark-pill {
+  background-color: #18201a;
+  color: #ffffff;
+  font-weight: 600;
+  border-radius: 9999px;
+  box-shadow: 0 3px 10px rgba(24, 32, 26, 0.18);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.btn-dark-pill:hover {
+  background-color: #263329;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(24, 32, 26, 0.25);
+}
+.btn-dark-pill:active {
+  transform: translateY(0);
+}
+
+
+
+/* Custom Soft Scrollbars */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd7c8;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #9fb39c;
+}

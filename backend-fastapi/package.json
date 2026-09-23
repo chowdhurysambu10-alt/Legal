@@ -1,0 +1,9 @@
+{
+  "name": "legal-ai-backend",
+  "version": "1.0.0",
+  "description": "FastAPI Backend for Legal AI",
+  "scripts": {
+    "dev": "./.venv/bin/uvicorn main:app --host 127.0.0.1 --port 8000 --reload",
+    "start": "./.venv/bin/uvicorn main:app --host 127.0.0.1 --port 8000"
+  }
+}

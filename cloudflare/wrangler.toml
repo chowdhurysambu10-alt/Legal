@@ -1,0 +1,18 @@
+name = "legal-ai"
+compatibility_date = "2026-09-01"
+pages_build_output_dir = "./frontend/dist"
+
+# Cloudflare D1 Database Binding
+[[d1_databases]]
+binding = "DB"
+database_name = "legal"
+database_id = "073ec7c6-6c8b-4764-a0ef-bdd9d8b1445e"
+
+# Optional Cloudflare Worker reverse proxy configuration
+# Proxies /api/* requests to your deployed FastAPI backend
+[vars]
+BACKEND_API_URL = "https://your-backend-api.fly.dev"
+
+# Routes configuration
+# route = "legal.yourdomain.com/*"
+
