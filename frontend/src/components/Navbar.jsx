@@ -69,6 +69,16 @@ export default function Navbar({ isOnline: propIsOnline }) {
             >
               Compare
             </Link>
+            <Link
+              to="/profile"
+              className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
+                location.pathname === '/profile'
+                  ? 'bg-[#eaf4e8] text-[#2c6e26]'
+                  : 'text-[#4e6651] hover:text-[#18201a]'
+              }`}
+            >
+              Profile
+            </Link>
           </nav>
         </div>
 
@@ -100,18 +110,20 @@ export default function Navbar({ isOnline: propIsOnline }) {
             <span>{statusLabel}</span>
           </div>
 
-
-
           {/* User Profile Avatar */}
           {user ? (
             <div className="flex items-center pl-2 border-l border-[#dbe4d7] gap-2">
               <button
                 type="button"
-                onClick={() => navigate('/login')}
-                className="w-8 h-8 rounded-full bg-[#e2ede0] border border-[#c6dec2] text-[#2c472f] flex items-center justify-center text-xs font-bold hover:bg-[#d4e6d2] transition-colors"
-                title={`Signed in as ${user.name}`}
+                onClick={() => navigate('/profile')}
+                className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold transition-all cursor-pointer shadow-2xs ${
+                  location.pathname === '/profile'
+                    ? 'bg-[#18201a] text-[#b4f070] ring-2 ring-[#3b872b]/40'
+                    : 'bg-[#e2ede0] border border-[#c6dec2] text-[#2c472f] hover:bg-[#d4e6d2]'
+                }`}
+                title={`Profile: ${user.name || 'User'}`}
               >
-                {user.name.slice(0, 2).toUpperCase()}
+                {user.name ? user.name.slice(0, 2).toUpperCase() : 'US'}
               </button>
             </div>
           ) : (

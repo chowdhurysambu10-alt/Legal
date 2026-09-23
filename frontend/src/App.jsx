@@ -9,6 +9,7 @@ import DashboardPage from './pages/DashboardPage';
 import DocumentDetailPage from './pages/DocumentDetailPage';
 import ComparisonPage from './pages/ComparisonPage';
 import LoginPage from './pages/LoginPage';
+import ProfilePage from './pages/ProfilePage';
 
 function AppContent() {
   const { uploadModalOpen, setUploadModalOpen, health, error } = useLegal();
@@ -38,6 +39,7 @@ function AppContent() {
         <Route path="/documents/:id" element={<DocumentDetailPage />} />
         <Route path="/compare" element={<ComparisonPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
       </Routes>
 
       {/* Global Upload Modal */}
