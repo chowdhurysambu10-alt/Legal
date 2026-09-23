@@ -34,7 +34,7 @@ A production-grade, 4-tier Legal AI Assistant designed for law firms, in-house c
 - **Actionable Lawyer Checklist**: Interactive negotiation task checklist with priority flags (`Immediate`, `Recommended`, `Standard`) and progress tracking.
 - **Interactive Contract RAG Assistant**: Ask any follow-up question regarding the active contract; queries ChromaDB for relevant clauses and provides answers grounded with page and excerpt citations.
 - **Dual Database Strategy**: Direct connection to **Supabase PostgreSQL** using the provided `supabase_schema.sql`, plus transparent embedded **SQLite** fallback for zero-configuration local usage.
-- **Cloudflare Edge Deployment Ready**: Includes `_routes.json`, `wrangler.toml`, and comprehensive multi-tier deployment instructions in `cloudflare/DEPLOYMENT_GUIDE.md`.
+- **Deployment Guides Ready**: Includes deployment templates, D1/SQL schema, and comprehensive multi-tier deployment instructions in `deployment-docs/DEPLOYMENT_GUIDE.md`.
 
 ---
 
@@ -80,8 +80,8 @@ legal AI/
 │   ├── main.py                   # FastAPI server entry point
 │   └── .env                      # Server environment configuration
 │
-└── cloudflare/
-    ├── wrangler.toml             # Cloudflare Pages & Worker configuration
+└── deployment-docs/
+    ├── wrangler.toml             # Deployment configuration template
     └── DEPLOYMENT_GUIDE.md       # Comprehensive 4-tier infrastructure deployment guide
 ```
 
