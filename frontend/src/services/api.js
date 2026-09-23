@@ -1,4 +1,5 @@
-const API_BASE = '/api';
+const rawApiUrl = (import.meta.env.VITE_API_URL || '').trim();
+const API_BASE = rawApiUrl ? `${rawApiUrl.replace(/\/+$/, '')}/api` : '/api';
 
 export async function checkHealth() {
   try {
@@ -141,7 +142,12 @@ export async function registerUserApi(email, password, fullName = null) {
       full_name: fullName
     })
   });
-  const data = await res.json();
+  let data = {};
+  try {
+    data = await res.json();
+  } catch (e) {
+    throw new Error(`Server returned status ${res.status}. Please check your backend connection.`);
+  }
   if (!res.ok) {
     throw new Error(data.detail || 'Failed to create account');
   }
@@ -157,7 +163,12 @@ export async function loginUserApi(email, password) {
       password
     })
   });
-  const data = await res.json();
+  let data = {};
+  try {
+    data = await res.json();
+  } catch (e) {
+    throw new Error(`Server returned status ${res.status}. Please check your backend connection.`);
+  }
   if (!res.ok) {
     throw new Error(data.detail || 'Failed to sign in');
   }

@@ -20,13 +20,20 @@ app = FastAPI(
 )
 
 # Parse CORS Origins from env
-cors_origins_env = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,http://127.0.0.1:8000")
-allowed_origins = [origin.strip() for origin in cors_origins_env.split(",") if origin.strip()]
+cors_origins_env = os.getenv("CORS_ORIGINS", "")
+custom_origins = [origin.strip() for origin in cors_origins_env.split(",") if origin.strip()]
+default_origins = [
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:8000",
+]
 
-# Add wildcard support for Cloudflare Pages preview domains
+# Allow any Vercel domain (*.vercel.app), Render (*.onrender.com), or localhost
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins + ["*"] if os.getenv("ENVIRONMENT") == "development" else allowed_origins,
+    allow_origins=custom_origins + default_origins if custom_origins else default_origins,
+    allow_origin_regex=r"https://.*\.vercel\.app|https://.*\.onrender\.com|http://localhost:\d+|http://127\.0\.0\.1:\d+",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
