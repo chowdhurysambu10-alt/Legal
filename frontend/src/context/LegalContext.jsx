@@ -74,7 +74,8 @@ export function LegalProvider({ children }) {
       setDocuments(docs || []);
       return docs;
     } catch (err) {
-      console.error('Error loading documents:', err);
+      // Graceful degraded mode when backend is offline or on initial unauthenticated view
+      setDocuments([]);
       return [];
     }
   };
