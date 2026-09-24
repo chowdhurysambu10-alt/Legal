@@ -84,18 +84,55 @@
 
 
 
-/* Custom Soft Scrollbars */
+/* Premium Custom Scrollbars */
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: #cbd7c8;
+  background: #f1f5ee;
   border-radius: 9999px;
 }
-::-webkit-scrollbar-thumb:hover {
-  background: #9fb39c;
+::-webkit-scrollbar-thumb {
+  background: #a9c5a4;
+  border-radius: 9999px;
+  border: 2px solid #f1f5ee;
 }
+::-webkit-scrollbar-thumb:hover {
+  background: #4da832;
+}
+
+/* Firefox scrollbar support */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #a9c5a4 #f1f5ee;
+}
+
+/* Horizontal card scroll container with stylish scrollbar */
+.horizontal-scroll-container {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: auto;
+  scrollbar-color: #4da832 #e7efe4;
+  padding-bottom: 8px;
+}
+
+.horizontal-scroll-container::-webkit-scrollbar {
+  height: 9px;
+}
+
+.horizontal-scroll-container::-webkit-scrollbar-track {
+  background: #e7efe4;
+  border-radius: 9999px;
+}
+
+.horizontal-scroll-container::-webkit-scrollbar-thumb {
+  background: #3b872b;
+  border-radius: 9999px;
+  border: 2px solid #e7efe4;
+}
+
+.horizontal-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: #256119;
+}
+

@@ -30,10 +30,20 @@ import {
   Scale,
   Layers,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Globe
 } from 'lucide-react';
 import { parseImportantClauses } from '../utils/contractIntelligence';
 import { askRagQuestion, getChatHistory, clearChatHistory } from '../services/api';
+import { useLegal } from '../context/LegalContext';
+import {
+  SUPPORTED_LANGUAGES,
+  translations,
+  getLocalizedCategoryName,
+  getLocalizedOverviewTitle,
+  getLocalizedLabel,
+  getLocalizedBadgeCategory
+} from '../utils/translations';
 
 function renderHighlightIcon(iconName, size = 15) {
   switch (iconName) {
@@ -178,6 +188,8 @@ export default function ContractDashboard({
   onUploadClick,
   onBackToHub
 }) {
+  const { language = 'en', setLanguage } = useLegal();
+  const t = translations[language] || translations.en;
   const data = parseImportantClauses(document, analysis);
 
   // Selected clause for detailed inline view
@@ -189,6 +201,9 @@ export default function ContractDashboard({
   // Deal highlights view toggle
   const [showAllHighlights, setShowAllHighlights] = useState(false);
 
+  // Card view mode: 'scroll' (horizontal scrollable bar) or 'grid' (classic grid)
+  const [cardLayoutMode, setCardLayoutMode] = useState('scroll');
+
   // AI Chatbot State (Side Panel)
   const [aiQuestion, setAiQuestion] = useState('');
   const [chatHistory, setChatHistory] = useState([]);
@@ -197,6 +212,8 @@ export default function ContractDashboard({
   const [expandedSources, setExpandedSources] = useState({});
   const aiInputRef = useRef(null);
   const chatStreamEndRef = useRef(null);
+  const cardsScrollRef = useRef(null);
+
 
   useEffect(() => {
     if (!document?.id) return;
@@ -322,24 +339,25 @@ export default function ContractDashboard({
       case 'CRITICAL':
         return (
           <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide uppercase bg-[#fef2f2] text-[#b91c1c] border border-[#fecaca]">
-            HIGH RISK
+            {t.highRisk}
           </span>
         );
       case 'MEDIUM':
         return (
           <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide uppercase bg-[#fef9ee] text-[#b45309] border border-[#fde68a]">
-            MEDIUM RISK
+            {t.mediumRisk}
           </span>
         );
       case 'LOW':
       default:
         return (
           <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide uppercase bg-[#f0fdf4] text-[#15803d] border border-[#bbf7d0]">
-            LOW RISK
+            {t.lowRisk}
           </span>
         );
     }
   };
+
 
   return (
     <div className="flex flex-col gap-6 max-w-7xl mx-auto w-full pb-12">
@@ -352,7 +370,7 @@ export default function ContractDashboard({
             className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white hover:bg-[#edf5ea] text-[#244227] border border-[#d6e5d3] hover:border-[#9ec998] text-xs font-bold shadow-2xs transition-all cursor-pointer hover:shadow-xs active:scale-98"
           >
             <ArrowLeft size={13} className="text-[#3b872b]" />
-            <span>&larr; Back to Workspace & History</span>
+            <span>&larr; {t.backToWorkspace}</span>
           </button>
         </div>
       )}
@@ -367,7 +385,7 @@ export default function ContractDashboard({
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-xs font-bold text-[#224425] bg-[#eef5eb] border border-[#d6e7d3] px-3 py-1 rounded-full inline-flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-[#4da832]" />
-                Analyzed
+                {t.analyzed}
               </span>
               <span className="text-xs font-semibold text-[#506c53] bg-[#f5f8f4] border border-[#e1ece0] px-2.5 py-1 rounded-full">
                 {data.contractType}
@@ -399,15 +417,34 @@ export default function ContractDashboard({
             </div>
           </div>
 
-          {/* Right: Quick Action Buttons */}
-          <div className="flex items-center gap-2.5 shrink-0">
+          {/* Right: Quick Action Buttons & Multiple Languages Selector */}
+          <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+            {/* Multiple Language Selector Dropdown */}
+            <div className="relative inline-flex items-center">
+              <div className="flex items-center gap-1.5 bg-[#f4f8f2] hover:bg-[#eaf4e7] border border-[#cfdfcd] rounded-full px-3 py-1.5 text-xs sm:text-sm font-bold text-[#224425] transition-all shadow-2xs hover:shadow-xs">
+                <Globe size={15} className="text-[#3b872b] shrink-0" />
+                <select
+                  value={language}
+                  onChange={(e) => setLanguage(e.target.value)}
+                  className="bg-transparent border-none text-[#1b381d] font-bold text-xs sm:text-[13px] cursor-pointer focus:outline-none pr-1"
+                  aria-label="Select contract language"
+                >
+                  {SUPPORTED_LANGUAGES.map((lang) => (
+                    <option key={lang.code} value={lang.code} className="text-[#18201a] bg-white py-1">
+                      {lang.flag} {lang.native} ({lang.name})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
             <button
               type="button"
               onClick={() => setShowFullContractModal(true)}
               className="px-4 py-2 rounded-full border border-[#dce8da] bg-white hover:bg-[#fafcf9] text-xs sm:text-sm font-bold text-[#264829] inline-flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
             >
               <FileText size={15} className="text-[#3b623f]" />
-              <span>View Contract</span>
+              <span>{t.viewContract}</span>
             </button>
 
             <button
@@ -416,7 +453,7 @@ export default function ContractDashboard({
               className="btn-lime-pill px-4 py-2 text-xs sm:text-sm font-bold inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
             >
               <Sparkles size={15} />
-              <span>Ask AI</span>
+              <span>{t.askAi}</span>
             </button>
           </div>
         </div>
@@ -434,66 +471,95 @@ export default function ContractDashboard({
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-xs sm:text-[13px] font-extrabold text-[#1a421f] bg-[#eef7ec] border border-[#d2e8cd] px-3 py-1 rounded-full inline-flex items-center gap-1.5 uppercase tracking-wide">
                   <span className="w-2 h-2 rounded-full bg-[#4da832]" />
-                  {data.contractCategory === 'rental'
-                    ? 'Room Rental & Tenancy Deal Terms'
-                    : data.contractCategory === 'employment'
-                    ? 'Employment Package & Compensation'
-                    : data.contractCategory === 'nda'
-                    ? 'Confidentiality & Non-Disclosure Terms'
-                    : data.contractCategory === 'services'
-                    ? 'Services & Commercial Deal Terms'
-                    : 'Key Deal Terms & Highlights'}
+                  {getLocalizedCategoryName(data.contractCategory, language)}
                 </span>
                 <span className="text-xs font-bold text-[#4e6a51] bg-[#f4f7f3] border border-[#e2ece0] px-2.5 py-1 rounded-full">
-                  {data.dealHighlights.length} Core Terms Identified
+                  {data.dealHighlights.length} {t.coreTermsIdentified}
                 </span>
               </div>
               <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-[#18201a] tracking-tight font-serif-editorial">
-                {data.contractCategory === 'rental'
-                  ? 'Key Room Rental Terms & Financial Overview'
-                  : data.contractCategory === 'employment'
-                  ? 'Employment Terms & Compensation Dashboard'
-                  : data.contractCategory === 'nda'
-                  ? 'Confidentiality Scope & Governing Terms'
-                  : data.contractCategory === 'services'
-                  ? 'Commercial Services & Financial Terms'
-                  : 'Vital Contract Highlights & Intelligence'}
+                {getLocalizedOverviewTitle(data.contractCategory, language)}
               </h2>
             </div>
 
-            {/* View All / Compact Toggle if > 4 items */}
-            {data.dealHighlights.length > 4 && (
-              <button
-                type="button"
-                onClick={() => setShowAllHighlights(!showAllHighlights)}
-                className="self-start sm:self-center px-3.5 py-1.5 rounded-full border border-[#d6e5d3] hover:border-[#9ec998] bg-[#f8faf7] hover:bg-[#edf5ea] text-xs sm:text-sm font-bold text-[#224725] inline-flex items-center gap-1.5 transition-all cursor-pointer shrink-0"
-              >
-                <span>{showAllHighlights ? 'Show Less' : `View All (${data.dealHighlights.length})`}</span>
-                {showAllHighlights ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-              </button>
-            )}
+            {/* View Mode & Scroll Controls */}
+            <div className="flex items-center gap-2 self-start sm:self-center">
+              {/* Scroll Bar Navigation Buttons */}
+              <div className="flex items-center bg-[#f4f8f2] border border-[#d6e5d3] rounded-full p-1 gap-1">
+                <button
+                  type="button"
+                  title="Scroll Left"
+                  onClick={() => {
+                    if (cardsScrollRef.current) {
+                      cardsScrollRef.current.scrollBy({ left: -320, behavior: 'smooth' });
+                    }
+                  }}
+                  className="w-7 h-7 rounded-full bg-white hover:bg-[#e4efe0] text-[#1e4421] border border-[#dce8da] flex items-center justify-center cursor-pointer shadow-2xs transition-colors"
+                >
+                  <ArrowLeft size={13} />
+                </button>
+                <span className="text-[11px] font-bold text-[#4e6c51] px-1.5 hidden sm:inline">
+                  Scroll Bar
+                </span>
+                <button
+                  type="button"
+                  title="Scroll Right"
+                  onClick={() => {
+                    if (cardsScrollRef.current) {
+                      cardsScrollRef.current.scrollBy({ left: 320, behavior: 'smooth' });
+                    }
+                  }}
+                  className="w-7 h-7 rounded-full bg-white hover:bg-[#e4efe0] text-[#1e4421] border border-[#dce8da] flex items-center justify-center cursor-pointer shadow-2xs transition-colors"
+                >
+                  <ArrowRight size={13} />
+                </button>
+              </div>
+
+              {/* View All / Compact Toggle */}
+              {data.dealHighlights.length > 4 && (
+                <button
+                  type="button"
+                  onClick={() => setShowAllHighlights(!showAllHighlights)}
+                  className="px-3.5 py-1.5 rounded-full border border-[#d6e5d3] hover:border-[#9ec998] bg-[#f8faf7] hover:bg-[#edf5ea] text-xs sm:text-sm font-bold text-[#224725] inline-flex items-center gap-1.5 transition-all cursor-pointer shrink-0"
+                >
+                  <span>{showAllHighlights ? t.showLess : `${t.viewAll} (${data.dealHighlights.length})`}</span>
+                  {showAllHighlights ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Quick Summary Pill Banner (if available) */}
           {data.quickSummaryBanner && (
             <div className="bg-[#f5f9f4] border border-[#d9e9d6] rounded-xl px-4 py-2.5 text-sm sm:text-[15px] font-medium text-[#1e3b21] flex items-center gap-2.5 leading-relaxed">
               <span className="font-extrabold text-[#224b26] shrink-0 uppercase tracking-wider text-xs bg-[#e4f2e0] px-2.5 py-1 rounded">
-                Summary
+                {t.summary}
               </span>
               <span className="truncate">{renderMarkdown(data.quickSummaryBanner)}</span>
             </div>
           )}
 
-          {/* Deal Cards Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {(showAllHighlights ? data.dealHighlights : data.dealHighlights.slice(0, 8)).map((item) => {
+          {/* Deal Cards Container: Smooth Scroll Bar by default & expandable grid on View All */}
+          <div
+            ref={cardsScrollRef}
+            className={
+              showAllHighlights
+                ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+                : "horizontal-scroll-container flex items-stretch gap-4 overflow-x-auto pb-3 pt-1 scroll-smooth"
+            }
+          >
+            {(showAllHighlights ? data.dealHighlights : data.dealHighlights).map((item) => {
               const styles = getHighlightColorStyles(item.color);
+              const localizedLabel = getLocalizedLabel(item.label, language);
+              const localizedBadge = getLocalizedBadgeCategory(item.category, language);
               return (
                 <div
                   key={item.id}
                   onClick={() => handleAskAboutHighlight(item)}
-                  className={`group relative rounded-2xl border p-4 sm:p-4.5 transition-all duration-200 cursor-pointer flex flex-col justify-between gap-3 ${styles.bg} hover:shadow-sm active:scale-[0.99]`}
-                  title={`Click to ask AI about ${item.label}`}
+                  className={`group relative rounded-2xl border p-4 sm:p-4.5 transition-all duration-200 cursor-pointer flex flex-col justify-between gap-3 ${styles.bg} hover:shadow-sm active:scale-[0.99] ${
+                    !showAllHighlights ? 'min-w-[270px] sm:min-w-[300px] flex-shrink-0' : ''
+                  }`}
+                  title={`${t.clickToAsk} ${localizedLabel}`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2">
@@ -501,18 +567,18 @@ export default function ContractDashboard({
                         {renderHighlightIcon(item.icon, 16)}
                       </div>
                       <span className={`text-[10.5px] font-extrabold tracking-wider uppercase px-2 py-0.5 rounded-md border ${styles.badge}`}>
-                        {item.category}
+                        {localizedBadge}
                       </span>
                     </div>
                     <span className="text-xs font-bold text-[#557657] group-hover:text-[#214724] transition-colors inline-flex items-center gap-1 opacity-0 group-hover:opacity-100">
-                      <span>Ask AI</span>
+                      <span>{t.askAi}</span>
                       <ArrowRight size={11} />
                     </span>
                   </div>
 
                   <div className="flex flex-col gap-1">
                     <span className="text-xs sm:text-[13px] font-extrabold text-[#3a583e] uppercase tracking-wider">
-                      {item.label}
+                      {localizedLabel}
                     </span>
                     <span className={`text-xl sm:text-2xl lg:text-[25px] font-black tracking-tight leading-tight line-clamp-2 ${styles.text}`}>
                       {item.value}
@@ -544,11 +610,11 @@ export default function ContractDashboard({
           <div className="px-1 flex items-baseline justify-between gap-2">
             <div>
               <h2 className="text-xl sm:text-2xl font-extrabold text-[#18201a] tracking-tight font-serif-editorial">
-                Important Clauses
+                {t.importantClauses}
               </h2>
             </div>
             <span className="text-xs sm:text-[13px] font-semibold text-[#668269]">
-              {data.clauses.length} clauses analyzed
+              {data.clauses.length} {t.clausesAnalyzed}
             </span>
           </div>
 
@@ -557,9 +623,9 @@ export default function ContractDashboard({
             {data.clauses.length === 0 ? (
               <div className="bg-white rounded-2xl border border-[#dfe8dc] p-8 text-center flex flex-col items-center justify-center shadow-xs">
                 <CheckCircle2 size={26} className="text-[#3b6e37] mb-2" />
-                <h4 className="text-base font-bold text-[#18201a]">No High-Risk Clauses Flagged</h4>
+                <h4 className="text-base font-bold text-[#18201a]">{t.noHighRiskClauses}</h4>
                 <p className="text-sm text-[#526e55] mt-1 max-w-sm">
-                  This contract does not contain any detected high-risk liabilities, onerous indemnities, or unusual restrictions.
+                  {t.noHighRiskDesc}
                 </p>
               </div>
             ) : (
@@ -590,13 +656,13 @@ export default function ContractDashboard({
 
                     {/* What it means (1 or 2 simple sentences) */}
                     <div className="text-sm sm:text-[15px] text-[#223a26] leading-relaxed mb-2.5">
-                      <span className="font-extrabold text-[#0e2110]">What it means: </span>
+                      <span className="font-extrabold text-[#0e2110]">{t.whatItMeans}: </span>
                       <span>{clause.whatItMeans}</span>
                     </div>
 
                     {/* Why it matters (one short sentence) */}
                     <div className="text-sm sm:text-[15px] text-[#345337] leading-relaxed pb-3 border-b border-[#edf3ec]">
-                      <span className="font-extrabold text-[#0e2110]">Why it matters: </span>
+                      <span className="font-extrabold text-[#0e2110]">{t.whyItMatters}: </span>
                       <span>{clause.whyItMatters}</span>
                     </div>
                   </div>
@@ -604,14 +670,14 @@ export default function ContractDashboard({
                   {/* Card Bottom: Who it affects & View Clause Toggle */}
                   <div className="pt-3.5 flex items-center justify-between">
                     <span className="text-xs sm:text-[13px] font-bold text-[#557158]">
-                      Affects: <span className="text-[#152918] font-extrabold">{clause.whoItAffects}</span>
+                      {t.affects}: <span className="text-[#152918] font-extrabold">{clause.whoItAffects}</span>
                     </span>
                     <button
                       type="button"
                       onClick={() => setSelectedClauseId(isExpanded ? null : clause.id)}
                       className="inline-flex items-center gap-1.5 text-xs sm:text-[13px] font-extrabold text-[#224b25] hover:text-[#18201a] transition-colors cursor-pointer"
                     >
-                      <span>{isExpanded ? 'Hide Details' : 'View Clause'}</span>
+                      <span>{isExpanded ? t.hideDetails : t.viewClause}</span>
                       <ArrowRight size={13} className={`transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
                     </button>
                   </div>
@@ -624,7 +690,7 @@ export default function ContractDashboard({
                       {/* CLAUSE (Original contract text) */}
                       <div>
                         <div className="text-xs font-extrabold uppercase tracking-wider text-[#48634c] mb-1.5">
-                          Clause (Original Contract Text)
+                          {t.clauseOriginalText}
                         </div>
                         <blockquote className="p-4 rounded-xl bg-[#fafcf9] border border-[#e0ece0] font-mono text-xs sm:text-[13.5px] text-[#1c2e1f] leading-relaxed italic whitespace-pre-wrap">
                           "{clause.originalClause}"
@@ -634,7 +700,7 @@ export default function ContractDashboard({
                       {/* IN SIMPLE WORDS */}
                       <div className="p-3.5 sm:p-4 rounded-xl bg-[#f5f9f3] border border-[#dbe7da]">
                         <div className="text-xs font-extrabold uppercase tracking-wider text-[#1e4722] mb-1">
-                          In Simple Words
+                          {t.inSimpleWords}
                         </div>
                         <p className="text-sm sm:text-base text-[#1b341f] font-medium leading-relaxed">
                           {clause.whatItMeans}
@@ -644,7 +710,7 @@ export default function ContractDashboard({
                       {/* WHY IT MATTERS */}
                       <div className="p-3.5 sm:p-4 rounded-xl bg-[#f5f9f3] border border-[#dbe7da]">
                         <div className="text-xs font-extrabold uppercase tracking-wider text-[#1e4722] mb-1">
-                          Why It Matters
+                          {t.whyItMatters}
                         </div>
                         <p className="text-sm sm:text-base text-[#1b341f] font-medium leading-relaxed">
                           {clause.whyItMatters}
@@ -655,11 +721,11 @@ export default function ContractDashboard({
                       <div className="flex flex-wrap items-center justify-between gap-2 text-xs sm:text-[13px] text-[#557158] pt-1.5">
                         <div className="flex items-center gap-3">
                           <span>
-                            <strong className="text-[#132716] font-extrabold">Who it affects:</strong> {clause.whoItAffects}
+                            <strong className="text-[#132716] font-extrabold">{t.affects}:</strong> {clause.whoItAffects}
                           </span>
                           <span>&bull;</span>
                           <span>
-                            <strong className="text-[#132716] font-extrabold">Source:</strong> {clause.sectionRef}
+                            <strong className="text-[#132716] font-extrabold">{t.source}:</strong> {clause.sectionRef}
                           </span>
                         </div>
 
@@ -669,7 +735,7 @@ export default function ContractDashboard({
                           className="inline-flex items-center gap-1.5 text-xs sm:text-[13px] font-bold text-[#224b25] hover:underline cursor-pointer"
                         >
                           <Sparkles size={12} className="text-[#4da832]" />
-                          <span>Ask AI about this clause &rarr;</span>
+                          <span>{t.askAiAboutClause} &rarr;</span>
                         </button>
                       </div>
                     </div>
@@ -696,10 +762,10 @@ export default function ContractDashboard({
                 <div>
                   <div className="flex items-center gap-2">
                     <h3 className="text-base sm:text-lg font-extrabold text-[#18201a] leading-tight">
-                      Legal AI Chatbot
+                      {t.legalAiChatbot}
                     </h3>
                     <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-[#eaf7e6] text-[#245c20] border border-[#cbe6c4]">
-                      Online
+                      {t.online}
                     </span>
                   </div>
                 </div>
@@ -713,7 +779,7 @@ export default function ContractDashboard({
                   title="Clear chat conversation"
                 >
                   <RotateCcw size={13} />
-                  <span>Clear</span>
+                  <span>{t.clear}</span>
                 </button>
               )}
             </div>
@@ -721,32 +787,25 @@ export default function ContractDashboard({
             {/* Quick Action Prompt Chips */}
             <div>
               <span className="text-xs font-extrabold text-[#48664c] uppercase tracking-wider block mb-2">
-                Quick Prompts:
+                {t.quickPrompts}
               </span>
               <div className="flex flex-wrap gap-2">
                 {[
-                  '👋 Say Hi',
-                  '💰 Rent & Deposit',
-                  '⚠️ Key Liabilities',
-                  '⏰ Notice & Termination',
-                  '📜 Governing Law'
-                ].map((chip, i) => {
-                  const query = chip === '👋 Say Hi' ? 'hi'
-                    : chip === '💰 Rent & Deposit' ? 'What is the rent amount, due date, and security deposit?'
-                    : chip === '⚠️ Key Liabilities' ? 'What are my primary liability risks and obligations?'
-                    : chip === '⏰ Notice & Termination' ? 'What are the termination clauses and notice periods?'
-                    : 'What is the governing law and dispute resolution jurisdiction?';
-                  return (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => handleAskAI(query)}
-                      className="text-xs sm:text-[13px] font-bold px-3.5 py-1.5 rounded-full bg-[#f4f8f3] hover:bg-[#e8f3e6] text-[#1c3c20] border border-[#d6e5d3] hover:border-[#9ec998] transition-all cursor-pointer active:scale-95"
-                    >
-                      {chip}
-                    </button>
-                  );
-                })}
+                  { chip: t.promptSayHi, query: t.promptQSayHi },
+                  { chip: t.promptRentDeposit, query: t.promptQRent },
+                  { chip: t.promptLiabilities, query: t.promptQLiabilities },
+                  { chip: t.promptNotice, query: t.promptQNotice },
+                  { chip: t.promptLaw, query: t.promptQLaw }
+                ].map((item, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => handleAskAI(item.query)}
+                    className="text-xs sm:text-[13px] font-bold px-3.5 py-1.5 rounded-full bg-[#f4f8f3] hover:bg-[#e8f3e6] text-[#1c3c20] border border-[#d6e5d3] hover:border-[#9ec998] transition-all cursor-pointer active:scale-95"
+                  >
+                    {item.chip}
+                  </button>
+                ))}
               </div>
             </div>
 
@@ -760,10 +819,10 @@ export default function ContractDashboard({
                   </div>
                   <div>
                     <h4 className="text-sm font-extrabold text-[#18201a]">
-                      Hello! I'm your Legal AI Assistant.
+                      {t.helloAiIntro}
                     </h4>
                     <p className="text-xs sm:text-[13px] text-[#4d6b50] mt-1 max-w-[280px] mx-auto leading-relaxed">
-                      I have analyzed <strong>{document?.filename || 'your contract'}</strong>. Click a prompt above or ask any question below!
+                      {t.helloAiDesc}
                     </p>
                   </div>
                 </div>
@@ -778,7 +837,7 @@ export default function ContractDashboard({
                       <div className="self-end max-w-[90%] bg-[#18201a] text-white px-4 py-3 rounded-2xl rounded-tr-xs shadow-2xs">
                         <div className="flex items-center gap-1.5 text-xs font-bold text-[#b4f070] mb-1">
                           <User size={13} />
-                          <span>You</span>
+                          <span>{t.you}</span>
                         </div>
                         <p className="text-sm sm:text-[15px] font-medium leading-relaxed">{item.question}</p>
                       </div>
@@ -788,7 +847,7 @@ export default function ContractDashboard({
                         <div className="flex items-center justify-between gap-2 mb-2.5 pb-2 border-b border-[#edf3ec]">
                           <div className="flex items-center gap-2 text-xs sm:text-sm font-extrabold text-[#1e5219]">
                             <Bot size={16} className="text-[#3b872b]" />
-                            <span>Legal AI Assistant</span>
+                            <span>{t.assistantName}</span>
                           </div>
 
                           {item.answer && (
@@ -801,12 +860,12 @@ export default function ContractDashboard({
                               {copiedIdx === idx ? (
                                 <>
                                   <Check size={13} className="text-[#2c6e26]" />
-                                  <span className="text-[#2c6e26] font-bold">Copied</span>
+                                  <span className="text-[#2c6e26] font-bold">{t.copied}</span>
                                 </>
                               ) : (
                                 <>
                                   <Copy size={13} />
-                                  <span>Copy</span>
+                                  <span>{t.copy}</span>
                                 </>
                               )}
                             </button>
@@ -827,7 +886,7 @@ export default function ContractDashboard({
                                 >
                                   <BookOpen size={14} />
                                   <span>
-                                    {isSourcesOpen ? 'Hide' : 'View'} {item.citations.length} verified clause citations
+                                    {isSourcesOpen ? t.hideCitations : t.viewCitations} ({item.citations.length})
                                   </span>
                                 </button>
 
@@ -839,9 +898,9 @@ export default function ContractDashboard({
                                         className="p-3 rounded-xl bg-white border border-[#dfe8dc] text-xs sm:text-[13px]"
                                       >
                                         <div className="flex justify-between text-[#57755b] font-extrabold text-[10px] uppercase tracking-wider mb-1">
-                                          <span>Page {c.page || 1} &bull; Verified Clause</span>
+                                          <span>Page {c.page || 1} &bull; {t.verifiedClause}</span>
                                           <span className="text-[#23581f]">
-                                            {Math.round((c.relevance || 0.9) * 100)}% Match
+                                            {Math.round((c.relevance || 0.9) * 100)}% {t.match}
                                           </span>
                                         </div>
                                         <div className="font-mono text-[#203222] italic text-xs leading-relaxed">
@@ -857,7 +916,7 @@ export default function ContractDashboard({
                         ) : (
                           <div className="flex items-center gap-2.5 py-1 text-sm text-[#466549] font-medium">
                             <span className="inline-block w-4 h-4 border-2 border-[#3b6e37] border-t-transparent rounded-full animate-spin" />
-                            <span>Reviewing contract & drafting answer...</span>
+                            <span>{t.thinking}</span>
                           </div>
                         )}
                       </div>
@@ -875,7 +934,7 @@ export default function ContractDashboard({
                 <input
                   ref={aiInputRef}
                   type="text"
-                  placeholder="Ask your Legal AI Assistant anything..."
+                  placeholder={t.inputPlaceholder}
                   value={aiQuestion}
                   onChange={(e) => setAiQuestion(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleAskAI()}
@@ -892,7 +951,7 @@ export default function ContractDashboard({
                   ) : (
                     <Send size={16} className="text-[#b4f070]" />
                   )}
-                  <span>Ask</span>
+                  <span>{t.ask}</span>
                 </button>
               </div>
             </div>
@@ -905,7 +964,7 @@ export default function ContractDashboard({
       ======================================================== */}
       <footer className="text-center pt-4">
         <p className="text-[11px] text-[#7b947e]">
-          AI-assisted contract understanding. Not legal advice.
+          {t.disclaimer}
         </p>
       </footer>
 
@@ -921,7 +980,7 @@ export default function ContractDashboard({
                   {data.contractName}
                 </h3>
                 <p className="text-[11px] text-[#69846b]">
-                  Extracted verbatim text ({document.page_count || 1} pages &bull; {document.chunk_count || 1} indexed clauses)
+                  {t.extractedVerbatim} ({document.page_count || 1} {t.pages} &bull; {document.chunk_count || 1} {t.indexedClauses})
                 </p>
               </div>
               <button
@@ -934,7 +993,7 @@ export default function ContractDashboard({
             </div>
 
             <pre className="p-4 rounded-2xl bg-[#fafcf9] border border-[#e2ece0] text-xs font-mono text-[#243525] overflow-y-auto whitespace-pre-wrap leading-relaxed flex-1">
-              {data.rawText || 'No extracted text available.'}
+              {data.rawText || t.noExtractedText}
             </pre>
 
             <div className="flex justify-end pt-2">
@@ -943,12 +1002,13 @@ export default function ContractDashboard({
                 onClick={() => setShowFullContractModal(false)}
                 className="btn-dark-pill px-4 py-1.5 text-xs font-semibold cursor-pointer"
               >
-                Close Contract Text
+                {t.closeContractText}
               </button>
             </div>
           </div>
         </div>
       )}
+
     </div>
   );
 }

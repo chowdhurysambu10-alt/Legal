@@ -1,10 +1,11 @@
 import React from 'react';
-import { Scale, UploadCloud, Files, User, Sparkles } from 'lucide-react';
+import { Scale, UploadCloud, Files, User, Sparkles, Globe } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useLegal } from '../context/LegalContext';
+import { SUPPORTED_LANGUAGES, translations } from '../utils/translations';
 
 export default function Navbar({ isOnline: propIsOnline }) {
-  const { user, setUploadModalOpen, health, error, dbConnected, isOnline: ctxIsOnline, refreshHealth } = useLegal();
+  const { user, setUploadModalOpen, health, error, dbConnected, isOnline: ctxIsOnline, refreshHealth, language = 'en', setLanguage } = useLegal();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -23,6 +24,7 @@ export default function Navbar({ isOnline: propIsOnline }) {
     statusLabel = 'Technical Problem';
     statusTooltip = error || health?.detail || 'Technical issue detected. Click to retry.';
   }
+
 
   return (
     <header className="sticky top-0 z-40 w-full bg-[#fbf9f5]/90 backdrop-blur-md border-b border-[#e5ebe2]">
@@ -84,6 +86,23 @@ export default function Navbar({ isOnline: propIsOnline }) {
 
         {/* Right: Actions & Status */}
         <div className="flex items-center gap-3">
+          {/* Global Multi-Language Selector Dropdown */}
+          <div className="flex items-center gap-1.5 bg-[#f3f7f1] hover:bg-[#eaf3e7] border border-[#d6e4d3] rounded-full px-2.5 py-1 text-xs font-semibold text-[#254627] transition-all shadow-2xs">
+            <Globe size={14} className="text-[#3b872b] shrink-0" />
+            <select
+              value={language}
+              onChange={(e) => setLanguage(e.target.value)}
+              className="bg-transparent border-none text-[#1b381d] font-bold text-xs cursor-pointer focus:outline-none pr-1"
+              aria-label="Application Language"
+            >
+              {SUPPORTED_LANGUAGES.map((lang) => (
+                <option key={lang.code} value={lang.code} className="text-[#18201a] bg-white">
+                  {lang.flag} {lang.native}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Subtle System Status Pill - Turns RED on database disconnect or technical error */}
           <div
             onClick={hasTechnicalProblem ? () => refreshHealth() : undefined}
@@ -109,6 +128,7 @@ export default function Navbar({ isOnline: propIsOnline }) {
             </span>
             <span>{statusLabel}</span>
           </div>
+
 
           {/* User Profile Avatar */}
           {user ? (

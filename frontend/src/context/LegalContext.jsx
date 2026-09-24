@@ -22,16 +22,39 @@ export function LegalProvider({ children }) {
   const [error, setError] = useState(null);
   const [dbConnected, setDbConnected] = useState(true);
 
-  // Auth state persisted in localStorage
-  const [user, setUser] = useState(() => {
+  // Language state persisted in localStorage
+  const [language, setLanguageState] = useState(() => {
     try {
-      const saved = localStorage.getItem('legal_ai_user');
-      if (saved) return JSON.parse(saved);
+      return localStorage.getItem('legal_ai_language') || 'en';
     } catch (e) {
-      console.warn('Could not read user from localStorage', e);
+      return 'en';
     }
-    return null;
   });
+
+  const setLanguage = (newLang) => {
+    setLanguageState(newLang);
+    try {
+      localStorage.setItem('legal_ai_language', newLang);
+      document.documentElement.setAttribute('lang', newLang);
+      if (newLang === 'ar') {
+        document.documentElement.setAttribute('dir', 'rtl');
+      } else {
+        document.documentElement.setAttribute('dir', 'ltr');
+      }
+    } catch (e) {}
+  };
+
+  useEffect(() => {
+    try {
+      document.documentElement.setAttribute('lang', language);
+      if (language === 'ar') {
+        document.documentElement.setAttribute('dir', 'rtl');
+      } else {
+        document.documentElement.setAttribute('dir', 'ltr');
+      }
+    } catch (e) {}
+  }, [language]);
+
 
   const refreshDocuments = async (overrideUserId = null) => {
     try {
@@ -193,6 +216,8 @@ export function LegalProvider({ children }) {
         isOnline,
         hasTechnicalProblem,
         user,
+        language,
+        setLanguage,
         refreshDocuments,
         refreshHealth,
         uploadFile,
