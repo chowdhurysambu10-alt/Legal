@@ -31,9 +31,9 @@ cors_origins_env = os.getenv("CORS_ORIGINS", "")
 configured_origins = [origin.strip() for origin in cors_origins_env.split(",") if origin.strip()]
 
 if IS_PRODUCTION:
-    # Strict production allowlist: no localhost, no broad regexes
-    allowed_origins = configured_origins if configured_origins else ["https://legal-ai.vercel.app"]
-    origin_regex = None
+    # Production allowlist: explicit origins plus Vercel deployment regex
+    allowed_origins = configured_origins
+    origin_regex = r"^https://.*\.vercel\.app$"
 else:
     # Development: allow local frontend servers
     allowed_origins = configured_origins + [
