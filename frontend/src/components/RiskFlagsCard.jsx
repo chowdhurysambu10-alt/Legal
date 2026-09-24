@@ -11,33 +11,41 @@ export default function RiskFlagsCard({ riskFlags = [] }) {
   });
 
   const getSeverityBadge = (severity) => {
-    switch (severity?.toUpperCase()) {
-      case 'CRITICAL':
-      case 'HIGH':
-        return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">
-            {severity} Risk
-          </span>
-        );
-      case 'MEDIUM':
-        return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-            {severity} Risk
-          </span>
-        );
-      case 'LOW':
-        return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-            {severity} Risk
-          </span>
-        );
-      default:
-        return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
-            Standard
-          </span>
-        );
+    const s = severity?.toUpperCase();
+    if (s === 'CRITICAL' || s === 'HIGH') {
+      return (
+        <span
+          role="status"
+          aria-label={`Severity level: ${s}`}
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-rose-50 text-rose-800 border border-rose-200"
+        >
+          <ShieldAlert size={13} aria-hidden="true" className="text-rose-600" />
+          <span>{s} RISK</span>
+        </span>
+      );
     }
+    if (s === 'MEDIUM') {
+      return (
+        <span
+          role="status"
+          aria-label="Severity level: Medium"
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-200"
+        >
+          <AlertTriangle size={13} aria-hidden="true" className="text-amber-600" />
+          <span>MEDIUM RISK</span>
+        </span>
+      );
+    }
+    return (
+      <span
+        role="status"
+        aria-label="Severity level: Low"
+        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200"
+      >
+        <ShieldCheck size={13} aria-hidden="true" className="text-emerald-600" />
+        <span>LOW RISK</span>
+      </span>
+    );
   };
 
   return (
@@ -90,7 +98,17 @@ export default function RiskFlagsCard({ riskFlags = [] }) {
                 className="rounded-xl border border-slate-200 bg-white hover:border-slate-300 transition-all p-4 shadow-2xs"
               >
                 <div
-                  className="flex items-start justify-between cursor-pointer gap-3"
+                  role="button"
+                  tabIndex={0}
+                  aria-expanded={isExpanded}
+                  aria-label={`${risk.title}, ${risk.severity} risk. Press Enter or Space to toggle details.`}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setExpandedIndex(isExpanded ? -1 : idx);
+                    }
+                  }}
+                  className="flex items-start justify-between cursor-pointer gap-3 focus:outline-none focus:ring-2 focus:ring-[#2f7d29] focus:ring-offset-1 rounded-lg"
                   onClick={() => setExpandedIndex(isExpanded ? -1 : idx)}
                 >
                   <div className="flex flex-col gap-1.5">
@@ -107,12 +125,12 @@ export default function RiskFlagsCard({ riskFlags = [] }) {
                     </h4>
                   </div>
 
-                  <button
-                    type="button"
+                  <span
                     className="p-1 text-slate-400 hover:text-slate-600 rounded-md"
+                    aria-hidden="true"
                   >
                     {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                  </button>
+                  </span>
                 </div>
 
                 {/* Excerpt */}

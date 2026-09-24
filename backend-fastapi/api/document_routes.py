@@ -51,19 +51,81 @@ This Agreement constitutes the entire agreement between the parties with respect
 """
 
 
+import os
+import re
+from fastapi import BackgroundTasks
+
+MAX_CONTRACT_SIZE_BYTES = 25 * 1024 * 1024  # 25 MB boundary
+
+
+def sanitize_filename(filename: str) -> str:
+    """Removes path traversal and non-safe characters from filenames."""
+    base = os.path.basename(filename)
+    clean = re.sub(r'[^a-zA-Z0-9_.-]', '_', base)
+    return clean or "contract.pdf"
+
+
+async def validate_and_read_pdf(file: UploadFile) -> bytes:
+    """Verifies extension, MIME type, size limit, and PDF magic bytes."""
+    clean_name = sanitize_filename(file.filename or "contract.pdf")
+    if not clean_name.lower().endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="Security rejection: Only valid .pdf files are accepted.")
+
+    # Read up to MAX + 1 bytes to prevent memory exhaustion / PDF bombs
+    contents = await file.read(MAX_CONTRACT_SIZE_BYTES + 1)
+    if len(contents) > MAX_CONTRACT_SIZE_BYTES:
+        raise HTTPException(
+            status_code=413,
+            detail=f"File size limit exceeded. Contracts must be under {MAX_CONTRACT_SIZE_BYTES // (1024 * 1024)}MB."
+        )
+
+    if len(contents) == 0:
+        raise HTTPException(status_code=400, detail="Upload rejected: File is empty (0 bytes).")
+
+    # Magic-byte verification (PDF files must begin with %PDF-)
+    if not contents.startswith(b"%PDF-"):
+        raise HTTPException(
+            status_code=400,
+            detail="File signature mismatch: File is not a valid PDF document."
+        )
+
+    return contents
+
+
+def process_contract_pipeline(doc_id: str, full_text: str, filename: str, pages: list):
+    """Asynchronous worker for chunking, vector indexing, and Gemini analysis."""
+    try:
+        chunks = chunk_legal_document(doc_id, pages, chunk_size=800, chunk_overlap=150)
+        rag_service.add_document_chunks(doc_id, chunks)
+        analysis_data = gemini_service.analyze_contract(full_text, filename)
+        analysis_data["document_id"] = doc_id
+        db_client.save_analysis(analysis_data)
+        print(f"[Pipeline Worker] Completed async processing for doc {doc_id}")
+    except Exception as e:
+        print(f"[Pipeline Worker Error] doc_id={doc_id}: {e}")
+
+
+from fastapi import Depends
+from core.security import get_optional_user, get_current_user, verify_document_ownership
+
+
 @router.post("/upload")
 async def upload_document(
+    background_tasks: BackgroundTasks,
     file: Optional[UploadFile] = File(None),
     use_sample: bool = Form(False),
-    user_id: Optional[str] = Form(None)
+    user_id: Optional[str] = Form(None),
+    current_user: Optional[dict] = Depends(get_optional_user)
 ):
     """
-    Receives PDF contract, extracts clean text, splits into chunks,
-    indexes into ChromaDB vector store, generates Gemini legal analysis,
-    and saves records in database linked to user_id.
+    Receives PDF contract with security checks (magic-byte inspection & size bounds),
+    extracts clean text, splits into chunks, indexes into ChromaDB vector store,
+    generates Gemini legal analysis, and saves records securely linked to the authenticated user.
     """
     try:
         doc_id = str(uuid.uuid4())
+        # Strictly prioritize verified session identity over unauthenticated client payload
+        effective_user_id = current_user["id"] if current_user else user_id
 
         if use_sample or not file:
             filename = "Sample_Enterprise_Master_Services_Agreement.pdf"
@@ -71,43 +133,64 @@ async def upload_document(
             pages = [{"page_number": 1, "text": full_text, "char_count": len(full_text)}]
             file_size = len(full_text.encode("utf-8"))
         else:
-            filename = file.filename or "uploaded_contract.pdf"
-            contents = await file.read()
+            filename = sanitize_filename(file.filename or "uploaded_contract.pdf")
+            contents = await validate_and_read_pdf(file)
             file_size = len(contents)
-
-            # Check if PDF
-            if not filename.lower().endswith(".pdf"):
-                raise HTTPException(status_code=400, detail="Only PDF files are supported.")
 
             full_text, pages = extract_text_from_pdf(contents)
             if not full_text.strip():
                 raise HTTPException(status_code=400, detail="Could not extract text from this PDF. It may be scanned or empty.")
 
+        from core.logger import logger
         # 1. Chunk document
-        chunks = chunk_legal_document(doc_id, pages, chunk_size=800, chunk_overlap=150)
-        chunk_count = len(chunks)
+        try:
+            chunks = chunk_legal_document(doc_id, pages, chunk_size=800, chunk_overlap=150)
+            chunk_count = len(chunks)
+        except Exception as chunk_err:
+            logger.error(f"PDF chunking failed for doc {doc_id}: {chunk_err}", extra={"component": "pdf_parser", "document_id": doc_id, "error_type": type(chunk_err).__name__})
+            raise HTTPException(status_code=422, detail="Failed to process document clause structure. Please ensure the PDF is not corrupted.")
 
         # 2. Store chunks in ChromaDB
-        rag_service.add_document_chunks(doc_id, chunks)
+        try:
+            rag_service.add_document_chunks(doc_id, chunks)
+        except Exception as chroma_err:
+            logger.error(f"ChromaDB indexing failed for doc {doc_id}: {chroma_err}", extra={"component": "chromadb", "document_id": doc_id, "error_type": type(chroma_err).__name__})
+            # Continue gracefully: document can still be reviewed even if vector search is temporarily degraded
 
-        # 3. Create document record in DB associated with user_id
-        doc_record = db_client.create_document({
-            "id": doc_id,
-            "user_id": user_id,
-            "filename": filename,
-            "file_size": file_size,
-            "page_count": len(pages),
-            "chunk_count": chunk_count,
-            "status": "completed",
-            "raw_preview": full_text[:1000]
-        })
+        # 3. Create document record in DB associated with verified user
+        try:
+            doc_record = db_client.create_document({
+                "id": doc_id,
+                "user_id": effective_user_id,
+                "filename": filename,
+                "file_size": file_size,
+                "page_count": len(pages),
+                "chunk_count": chunk_count,
+                "status": "completed",
+                "raw_preview": full_text[:1000]
+            })
+        except Exception as db_err:
+            logger.error(f"Database save_document failed for doc {doc_id}: {db_err}", extra={"component": "database", "document_id": doc_id, "error_type": type(db_err).__name__})
+            raise HTTPException(status_code=500, detail="Database persistence failed. The database may be offline or unreachable.")
 
         # 4. Generate AI analysis (Executive Summary, Risk Flags, Checklist)
-        analysis_data = gemini_service.analyze_contract(full_text, filename)
+        try:
+            analysis_data = gemini_service.analyze_contract(full_text, filename)
+        except Exception as ai_err:
+            logger.error(f"Gemini analysis failed for doc {doc_id}: {ai_err}", extra={"component": "gemini", "document_id": doc_id, "error_type": type(ai_err).__name__})
+            # Fallback to local heuristic analysis so upload does not crash
+            analysis_data = gemini_service._generate_heuristic_analysis(full_text, filename)
+
         analysis_data["document_id"] = doc_id
 
         # 5. Save analysis in DB
-        saved_analysis = db_client.save_analysis(analysis_data)
+        try:
+            saved_analysis = db_client.save_analysis(analysis_data)
+        except Exception as db_save_err:
+            logger.error(f"Database save_analysis failed for doc {doc_id}: {db_save_err}", extra={"component": "database", "document_id": doc_id, "error_type": type(db_save_err).__name__})
+            saved_analysis = analysis_data
+
+        logger.info(f"Successfully processed document {filename} (id: {doc_id})", extra={"component": "document_pipeline", "document_id": doc_id, "file_size": file_size})
 
         return {
             "success": True,
@@ -119,34 +202,51 @@ async def upload_document(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"[Upload Error] {e}")
+        from core.logger import logger
+        logger.error(f"Unexpected upload processing error: {e}", extra={"component": "upload_pipeline", "error_type": type(e).__name__})
         raise HTTPException(status_code=500, detail=f"Failed to process document: {str(e)}")
 
 
+
 @router.get("/documents")
-async def list_documents(user_id: Optional[str] = None):
-    """Returns list of uploaded and analyzed contracts, optionally filtered by user_id."""
-    docs = db_client.list_documents(user_id=user_id)
-    enriched = []
-    for d in docs:
-        doc_dict = dict(d)
-        analysis = db_client.get_analysis(doc_dict["id"])
-        if analysis:
-            doc_dict["overall_risk_score"] = analysis.get("overall_risk_score", "MEDIUM")
-            doc_dict["summary"] = analysis.get("summary", "")
-        else:
-            doc_dict["overall_risk_score"] = "NOT ANALYZED"
-            doc_dict["summary"] = ""
-        enriched.append(doc_dict)
-    return {"documents": enriched}
+async def list_documents(
+    user_id: Optional[str] = None,
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    current_user: Optional[dict] = Depends(get_optional_user)
+):
+    """
+    Returns list of uploaded contracts with pagination.
+    Derived strictly from verified user identity if authenticated to prevent cross-tenant enumeration.
+    Uses efficient single-query join / batch retrieval to eliminate N+1 database queries.
+    """
+    effective_user_id = current_user["id"] if current_user else user_id
+    docs = db_client.list_documents(
+        user_id=effective_user_id,
+        limit=limit,
+        offset=offset,
+        include_analysis=True
+    )
+    return {
+        "documents": docs,
+        "total_count": len(docs),
+        "limit": limit,
+        "offset": offset
+    }
 
 
 @router.get("/documents/{document_id}")
-async def get_document_details(document_id: str):
-    """Fetches single document details and associated analysis."""
+async def get_document_details(
+    document_id: str,
+    current_user: Optional[dict] = Depends(get_optional_user)
+):
+    """Fetches single document details with strict IDOR ownership verification."""
     doc = db_client.get_document(document_id)
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found.")
+    
+    # Verify owner
+    verify_document_ownership(doc, current_user)
     
     analysis = db_client.get_analysis(document_id)
     return {
@@ -156,8 +256,17 @@ async def get_document_details(document_id: str):
 
 
 @router.delete("/documents/{document_id}")
-async def delete_document(document_id: str):
-    """Deletes document from database and ChromaDB vector index."""
+async def delete_document(
+    document_id: str,
+    current_user: Optional[dict] = Depends(get_optional_user)
+):
+    """Deletes document with IDOR ownership verification."""
+    doc = db_client.get_document(document_id)
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found.")
+    
+    verify_document_ownership(doc, current_user)
+
     # Delete from ChromaDB
     rag_service.delete_document(document_id)
     # Delete from DB
@@ -167,8 +276,17 @@ async def delete_document(document_id: str):
 
 
 @router.get("/documents/{document_id}/analysis")
-async def get_document_analysis(document_id: str):
-    """Fetches analysis for a specific document."""
+async def get_document_analysis(
+    document_id: str,
+    current_user: Optional[dict] = Depends(get_optional_user)
+):
+    """Fetches analysis for a specific document with IDOR verification."""
+    doc = db_client.get_document(document_id)
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found.")
+    
+    verify_document_ownership(doc, current_user)
+
     analysis = db_client.get_analysis(document_id)
     if not analysis:
         raise HTTPException(status_code=404, detail="Analysis not found for this document.")
@@ -181,15 +299,21 @@ class CompareRequest(BaseModel):
 
 
 @router.post("/documents/compare")
-async def compare_documents(payload: CompareRequest):
+async def compare_documents(
+    payload: CompareRequest,
+    current_user: Optional[dict] = Depends(get_optional_user)
+):
     """
-    Compares two contracts side-by-side, identifying key provision differences,
-    liability discrepancies, and notable legal deltas.
+    Compares two contracts side-by-side with IDOR protection on both documents.
     """
     doc1 = db_client.get_document(payload.doc1_id)
     doc2 = db_client.get_document(payload.doc2_id)
     if not doc1 or not doc2:
         raise HTTPException(status_code=404, detail="One or both documents not found.")
+
+    verify_document_ownership(doc1, current_user)
+    verify_document_ownership(doc2, current_user)
+
 
     analysis1 = db_client.get_analysis(payload.doc1_id) or {}
     analysis2 = db_client.get_analysis(payload.doc2_id) or {}

@@ -8,6 +8,8 @@ export default function ChatPanel({ documentId, filename }) {
   const [loading, setLoading] = useState(false);
   const [expandedSources, setExpandedSources] = useState({});
   const messagesEndRef = useRef(null);
+  const sendingRef = useRef(false);
+  const chatCacheRef = useRef(new Map());
 
   useEffect(() => {
     if (!documentId) return;
@@ -37,12 +39,31 @@ export default function ChatPanel({ documentId, filename }) {
   };
 
   const handleSend = async (queryText) => {
-    const textToSend = queryText || input;
-    if (!textToSend.trim() || !documentId || loading) return;
+    const textToSend = (queryText || input).trim();
+    if (!textToSend || !documentId || sendingRef.current || loading) return;
 
+    // Check client session cache to eliminate duplicate AI calls
+    const cacheKey = `${documentId}:${textToSend.toLowerCase()}`;
+    if (chatCacheRef.current.has(cacheKey)) {
+      const cached = chatCacheRef.current.get(cacheKey);
+      setMessages((prev) => [
+        ...prev,
+        { role: 'user', content: textToSend },
+        {
+          role: 'assistant',
+          content: cached.answer,
+          sources: cached.citations || [],
+          confidence: cached.confidence
+        }
+      ]);
+      setInput('');
+      return;
+    }
+
+    sendingRef.current = true;
     const userMessage = {
       role: 'user',
-      content: textToSend.trim(),
+      content: textToSend,
     };
 
     setMessages((prev) => [...prev, userMessage]);
@@ -50,7 +71,8 @@ export default function ChatPanel({ documentId, filename }) {
     setLoading(true);
 
     try {
-      const res = await askQuestion(documentId, textToSend.trim());
+      const res = await askQuestion(documentId, textToSend);
+      chatCacheRef.current.set(cacheKey, res);
       const botMessage = {
         role: 'assistant',
         content: res.answer,
@@ -68,6 +90,7 @@ export default function ChatPanel({ documentId, filename }) {
       ]);
     } finally {
       setLoading(false);
+      sendingRef.current = false;
     }
   };
 
@@ -106,7 +129,12 @@ export default function ChatPanel({ documentId, filename }) {
       </div>
 
       {/* Message Stream */}
-      <div className="flex-1 p-4 overflow-y-auto flex flex-col gap-3.5">
+      <div 
+        className="flex-1 p-4 overflow-y-auto flex flex-col gap-3.5"
+        role="log"
+        aria-live="polite"
+        aria-label="Conversation messages"
+      >
         {messages.map((msg, idx) => {
           const isUser = msg.role === 'user';
           const hasSources = msg.sources && msg.sources.length > 0;
@@ -124,7 +152,7 @@ export default function ChatPanel({ documentId, filename }) {
               <div className={`flex items-center gap-1.5 mb-1 text-[10px] font-semibold ${
                 isUser ? 'text-[#b4f070]' : 'text-[#5a715d]'
               }`}>
-                {isUser ? <User size={11} /> : <Bot size={11} />}
+                {isUser ? <User size={11} aria-hidden="true" /> : <Bot size={11} aria-hidden="true" />}
                 <span>{isUser ? 'You' : 'Legal AI'}</span>
               </div>
 
@@ -136,9 +164,10 @@ export default function ChatPanel({ documentId, filename }) {
                   <button
                     type="button"
                     onClick={() => toggleSources(idx)}
-                    className="flex items-center gap-1 text-[11px] font-bold text-[#2d6e27] hover:underline cursor-pointer"
+                    aria-expanded={isSourcesOpen}
+                    className="flex items-center gap-1 text-[11px] font-bold text-[#2d6e27] hover:underline cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#2d6e27]"
                   >
-                    <BookOpen size={11} />
+                    <BookOpen size={11} aria-hidden="true" />
                     <span>
                       {isSourcesOpen ? 'Hide' : 'View'} {msg.sources.length} verified clause citations
                     </span>
@@ -169,8 +198,8 @@ export default function ChatPanel({ documentId, filename }) {
         })}
 
         {loading && (
-          <div className="self-start bg-[#f6f9f4] border border-[#e2eae0] rounded-2xl rounded-tl-xs p-3 text-xs text-[#526a54] flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#418738] animate-ping"></span>
+          <div role="status" aria-live="assertive" className="self-start bg-[#f6f9f4] border border-[#e2eae0] rounded-2xl rounded-tl-xs p-3 text-xs text-[#526a54] flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[#418738] animate-ping" aria-hidden="true"></span>
             <span>Analyzing contract clauses & preparing response...</span>
           </div>
         )}
@@ -179,13 +208,13 @@ export default function ChatPanel({ documentId, filename }) {
       </div>
 
       {/* Suggested Prompts */}
-      <div className="px-4 py-2 bg-[#fafcf9] border-t border-[#edf2ea] flex gap-1.5 overflow-x-auto">
+      <div className="px-4 py-2 bg-[#fafcf9] border-t border-[#edf2ea] flex gap-1.5 overflow-x-auto" aria-label="Suggested contract queries">
         {promptSuggestions.map((p, i) => (
           <button
             key={i}
             type="button"
             onClick={() => handleSend(p)}
-            className="px-3 py-1 rounded-full bg-white border border-[#dce8da] hover:border-[#a0be9e] hover:bg-[#f0f6ee] text-[11px] font-medium text-[#405643] whitespace-nowrap transition-colors cursor-pointer"
+            className="px-3 py-1 rounded-full bg-white border border-[#dce8da] hover:border-[#a0be9e] hover:bg-[#f0f6ee] text-[11px] font-medium text-[#405643] whitespace-nowrap transition-colors cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#4b6b4e]"
           >
             {p}
           </button>
@@ -193,33 +222,36 @@ export default function ChatPanel({ documentId, filename }) {
       </div>
 
       {/* Input Bar */}
-      <div className="p-3 bg-white border-t border-[#edf2ea] flex items-center gap-2">
+      <form 
+        onSubmit={(e) => { e.preventDefault(); handleSend(); }}
+        className="p-3 bg-white border-t border-[#edf2ea] flex items-center gap-2"
+      >
         <div className="relative flex-1">
+          <label htmlFor="chat-query-input" className="sr-only">
+            Ask a question about this contract
+          </label>
           <input
             id="chat-query-input"
             type="text"
             placeholder="Ask anything about this contract..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') handleSend();
-            }}
             disabled={loading}
-            className="w-full pl-9 pr-3 py-2 rounded-full border border-[#dce8da] text-xs text-[#18201a] placeholder:text-[#889d8b] focus:outline-none focus:border-[#4b6b4e] bg-[#fafcf9]"
+            className="w-full pl-9 pr-3 py-2 rounded-full border border-[#dce8da] text-xs text-[#18201a] placeholder:text-[#889d8b] focus:outline-none focus:border-[#4b6b4e] focus:ring-1 focus:ring-[#4b6b4e] bg-[#fafcf9]"
           />
-          <Search size={14} className="absolute left-3 top-2.5 text-[#7f9982]" />
+          <Search size={14} className="absolute left-3 top-2.5 text-[#7f9982]" aria-hidden="true" />
         </div>
 
         <button
           id="btn-send-chat"
-          type="button"
-          onClick={() => handleSend()}
+          type="submit"
           disabled={loading || !input.trim()}
-          className="btn-lime-pill p-2 rounded-full disabled:opacity-40 transition-colors cursor-pointer"
+          aria-label="Send message"
+          className="btn-lime-pill p-2 rounded-full disabled:opacity-40 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#4b6b4e]"
         >
-          <Send size={15} className="text-[#13240c]" />
+          <Send size={15} className="text-[#13240c]" aria-hidden="true" />
         </button>
-      </div>
+      </form>
     </div>
   );
 }

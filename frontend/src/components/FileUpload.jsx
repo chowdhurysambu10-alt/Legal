@@ -136,6 +136,15 @@ export default function FileUpload({ onUploadSuccess }) {
         <>
           <div
             id="dropzone-upload"
+            role="button"
+            tabIndex={0}
+            aria-label="Upload PDF contract. Drag and drop file here or press Enter to browse files."
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                fileInputRef.current?.click();
+              }
+            }}
             onDragOver={(e) => {
               e.preventDefault();
               setIsDragging(true);
@@ -143,7 +152,7 @@ export default function FileUpload({ onUploadSuccess }) {
             onDragLeave={() => setIsDragging(false)}
             onDrop={handleFileDrop}
             onClick={() => fileInputRef.current?.click()}
-            className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all flex flex-col items-center ${
+            className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all flex flex-col items-center focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 ${
               isDragging
                 ? 'border-blue-500 bg-blue-50/40'
                 : 'border-slate-200 hover:border-slate-300 bg-slate-50/40 hover:bg-slate-50'
@@ -153,11 +162,12 @@ export default function FileUpload({ onUploadSuccess }) {
               type="file"
               ref={fileInputRef}
               accept=".pdf"
-              className="hidden"
+              className="sr-only"
+              aria-label="Select contract PDF file"
               onChange={handleFileSelect}
             />
 
-            <div className="w-11 h-11 rounded-full bg-white border border-slate-200 shadow-xs flex items-center justify-center text-slate-600 mb-3 group-hover:scale-105 transition-transform">
+            <div className="w-11 h-11 rounded-full bg-white border border-slate-200 shadow-xs flex items-center justify-center text-slate-600 mb-3 group-hover:scale-105 transition-transform" aria-hidden="true">
               <UploadCloud size={20} className="text-slate-600" />
             </div>
 
@@ -174,15 +184,15 @@ export default function FileUpload({ onUploadSuccess }) {
                 e.stopPropagation();
                 fileInputRef.current?.click();
               }}
-              className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition-colors"
+              className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition-colors focus:ring-2 focus:ring-blue-600 focus:outline-none"
             >
               Browse Files
             </button>
           </div>
 
           {error && (
-            <div className="mt-3 p-3 rounded-lg bg-rose-50 border border-rose-200 flex items-center gap-2 text-xs text-rose-700">
-              <AlertCircle size={15} className="shrink-0 text-rose-600" />
+            <div role="alert" aria-live="assertive" className="mt-3 p-3 rounded-lg bg-rose-50 border border-rose-200 flex items-center gap-2 text-xs text-rose-700">
+              <AlertCircle size={15} className="shrink-0 text-rose-600" aria-hidden="true" />
               <span>{error}</span>
             </div>
           )}

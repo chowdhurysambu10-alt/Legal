@@ -1,4 +1,5 @@
 import os
+import time
 import json
 import sqlite3
 import uuid
@@ -37,11 +38,13 @@ class DatabaseClient:
         self.connection_error = None
         self.simulated_disconnected = False
         self.client = None
+        self._last_cleanup_time = 0.0
         self._ensure_supabase_client()
         self._init_sqlite()
 
     def _ensure_supabase_client(self):
         """Dynamically re-reads .env and connects to Supabase without requiring server restart."""
+        from core.logger import logger
         load_dotenv(override=True)
         url = os.getenv("SUPABASE_URL", "").strip()
         key = os.getenv("SUPABASE_KEY", "").strip()
@@ -52,12 +55,15 @@ class DatabaseClient:
                     self.client = create_client(url, key)
                     self.is_supabase = True
                     self.configured_for_supabase = True
-                    print(f"[Supabase] Connected to {url}")
+                    logger.info("Supabase client successfully initialized", extra={"component": "supabase", "database_mode": "supabase"})
                 except Exception as e:
                     self.connection_error = str(e)
                     self.is_supabase = False
                     self.configured_for_supabase = False
-                    print(f"[Supabase] Connection error: {e}")
+                    logger.error(
+                        f"Supabase connection failed, falling back to local SQLite: {e}",
+                        extra={"component": "supabase", "error_type": type(e).__name__}
+                    )
             else:
                 self.is_supabase = True
                 self.configured_for_supabase = True
@@ -67,11 +73,13 @@ class DatabaseClient:
         return self.client
 
     def _init_sqlite(self):
-        """Initializes tables in local SQLite database mirroring Supabase schema."""
+        """Initializes tables, WAL journal mode, and performance indexes in local SQLite database."""
         conn = sqlite3.connect(self.sqlite_db_path)
         cur = conn.cursor()
         
         cur.execute("PRAGMA foreign_keys = ON;")
+        cur.execute("PRAGMA journal_mode = WAL;")
+        cur.execute("PRAGMA synchronous = NORMAL;")
         
         cur.execute("""
             CREATE TABLE IF NOT EXISTS users (
@@ -127,6 +135,12 @@ class DatabaseClient:
                 FOREIGN KEY (document_id) REFERENCES documents (id) ON DELETE CASCADE
             );
         """)
+
+        # Performance Indexes
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_documents_user_id ON documents(user_id);")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_documents_upload_date ON documents(upload_date DESC);")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_analyses_document_id ON analyses(document_id);")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_chat_messages_doc_created ON chat_messages(document_id, created_at ASC);")
 
         conn.commit()
         conn.close()
@@ -316,12 +330,21 @@ class DatabaseClient:
         conn.close()
         return payload
 
-    def list_documents(self, user_id: Optional[str] = None) -> List[Dict[str, Any]]:
-        # Automatically clean up any data belonging to users deleted from the database
-        try:
-            self.cleanup_orphaned_documents()
-        except Exception:
-            pass
+    def list_documents(
+        self,
+        user_id: Optional[str] = None,
+        limit: int = 50,
+        offset: int = 0,
+        include_analysis: bool = True
+    ) -> List[Dict[str, Any]]:
+        # Throttled cleanup of orphaned records (at most once per hour)
+        now = time.time()
+        if now - getattr(self, "_last_cleanup_time", 0.0) > 3600:
+            self._last_cleanup_time = now
+            try:
+                self.cleanup_orphaned_documents()
+            except Exception:
+                pass
 
         # 1. Supabase
         if self.is_supabase:
@@ -329,22 +352,59 @@ class DatabaseClient:
                 q = self.client.table("documents").select("*")
                 if user_id:
                     q = q.eq("user_id", user_id)
-                res = q.order("upload_date", desc=True).execute()
-                if res.data is not None:
-                    return res.data
+                res = q.order("upload_date", desc=True).range(offset, offset + limit - 1).execute()
+                docs = res.data or []
+                if docs and include_analysis:
+                    doc_ids = [d["id"] for d in docs]
+                    try:
+                        a_res = self.client.table("analyses").select("document_id, overall_risk_score, summary").in_("document_id", doc_ids).execute()
+                        a_map = {a["document_id"]: a for a in (a_res.data or [])}
+                        for d in docs:
+                            an = a_map.get(d["id"])
+                            d["overall_risk_score"] = an.get("overall_risk_score", "MEDIUM") if an else "NOT ANALYZED"
+                            d["summary"] = an.get("summary", "") if an else ""
+                    except Exception as e:
+                        print(f"[Supabase] Batch analysis fetch error: {e}")
+                return docs
             except Exception as e:
                 print(f"[Supabase] Error listing documents: {e}. Using SQLite.")
 
-        # Local SQLite
+        # Local SQLite with single JOIN query (eliminates N+1 query overhead)
         conn = sqlite3.connect(self.sqlite_db_path)
         conn.row_factory = sqlite3.Row
         cur = conn.cursor()
-        if user_id:
-            cur.execute("SELECT * FROM documents WHERE user_id = ? ORDER BY upload_date DESC", (user_id,))
+        if include_analysis:
+            if user_id:
+                cur.execute("""
+                    SELECT d.*, a.overall_risk_score, a.summary
+                    FROM documents d
+                    LEFT JOIN analyses a ON d.id = a.document_id
+                    WHERE d.user_id = ?
+                    ORDER BY d.upload_date DESC
+                    LIMIT ? OFFSET ?
+                """, (user_id, limit, offset))
+            else:
+                cur.execute("""
+                    SELECT d.*, a.overall_risk_score, a.summary
+                    FROM documents d
+                    LEFT JOIN analyses a ON d.id = a.document_id
+                    ORDER BY d.upload_date DESC
+                    LIMIT ? OFFSET ?
+                """, (limit, offset))
         else:
-            cur.execute("SELECT * FROM documents ORDER BY upload_date DESC")
+            if user_id:
+                cur.execute("SELECT * FROM documents WHERE user_id = ? ORDER BY upload_date DESC LIMIT ? OFFSET ?", (user_id, limit, offset))
+            else:
+                cur.execute("SELECT * FROM documents ORDER BY upload_date DESC LIMIT ? OFFSET ?", (limit, offset))
+
         rows = cur.fetchall()
-        docs = [dict(r) for r in rows]
+        docs = []
+        for r in rows:
+            d = dict(r)
+            if include_analysis:
+                d["overall_risk_score"] = d.get("overall_risk_score") or "NOT ANALYZED"
+                d["summary"] = d.get("summary") or ""
+            docs.append(d)
         conn.close()
         return docs
 
@@ -603,11 +663,11 @@ class DatabaseClient:
         conn.close()
         return payload
 
-    def get_chat_history(self, doc_id: str) -> List[Dict[str, Any]]:
+    def get_chat_history(self, doc_id: str, limit: int = 100, offset: int = 0) -> List[Dict[str, Any]]:
         # 1. Supabase
         if self.is_supabase:
             try:
-                res = self.client.table("chat_messages").select("*").eq("document_id", doc_id).order("created_at", desc=False).execute()
+                res = self.client.table("chat_messages").select("*").eq("document_id", doc_id).order("created_at", desc=False).range(offset, offset + limit - 1).execute()
                 if res.data is not None:
                     return res.data
             except Exception:
@@ -617,7 +677,10 @@ class DatabaseClient:
         conn = sqlite3.connect(self.sqlite_db_path)
         conn.row_factory = sqlite3.Row
         cur = conn.cursor()
-        cur.execute("SELECT * FROM chat_messages WHERE document_id = ? ORDER BY created_at ASC", (doc_id,))
+        cur.execute(
+            "SELECT * FROM chat_messages WHERE document_id = ? ORDER BY created_at ASC LIMIT ? OFFSET ?",
+            (doc_id, limit, offset)
+        )
         rows = cur.fetchall()
         msgs = []
         for r in rows:

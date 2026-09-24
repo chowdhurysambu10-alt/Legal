@@ -60,18 +60,46 @@ ALTER TABLE public.documents ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.analyses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.chat_messages ENABLE ROW LEVEL SECURITY;
 
--- Allow access for service role and API
-DROP POLICY IF EXISTS "Full access to users" ON public.users;
-CREATE POLICY "Full access to users" ON public.users FOR ALL USING (true);
+-- 1. Users Table: Users can only read and update their own profile
+DROP POLICY IF EXISTS "Users can read own profile" ON public.users;
+CREATE POLICY "Users can read own profile" ON public.users
+FOR SELECT USING (auth.uid()::text = id);
 
-DROP POLICY IF EXISTS "Full access to documents" ON public.documents;
-CREATE POLICY "Full access to documents" ON public.documents FOR ALL USING (true);
+DROP POLICY IF EXISTS "Users can update own profile" ON public.users;
+CREATE POLICY "Users can update own profile" ON public.users
+FOR UPDATE USING (auth.uid()::text = id);
 
-DROP POLICY IF EXISTS "Full access to analyses" ON public.analyses;
-CREATE POLICY "Full access to analyses" ON public.analyses FOR ALL USING (true);
+-- 2. Documents Table: Users can strictly access their own documents (or unassigned demo docs)
+DROP POLICY IF EXISTS "User document ownership policy" ON public.documents;
+CREATE POLICY "User document ownership policy" ON public.documents
+FOR ALL
+USING (auth.uid()::text = user_id OR user_id IS NULL)
+WITH CHECK (auth.uid()::text = user_id OR user_id IS NULL);
 
-DROP POLICY IF EXISTS "Full access to chat_messages" ON public.chat_messages;
-CREATE POLICY "Full access to chat_messages" ON public.chat_messages FOR ALL USING (true);
+-- 3. Analyses Table: Access cascaded through document ownership
+DROP POLICY IF EXISTS "Analyses access bound to document owner" ON public.analyses;
+CREATE POLICY "Analyses access bound to document owner" ON public.analyses
+FOR ALL
+USING (
+  EXISTS (
+    SELECT 1 FROM public.documents d
+    WHERE d.id = analyses.document_id 
+    AND (d.user_id = auth.uid()::text OR d.user_id IS NULL)
+  )
+);
+
+-- 4. Chat Messages: Access cascaded through document ownership
+DROP POLICY IF EXISTS "Chat messages access bound to document owner" ON public.chat_messages;
+CREATE POLICY "Chat messages access bound to document owner" ON public.chat_messages
+FOR ALL
+USING (
+  EXISTS (
+    SELECT 1 FROM public.documents d
+    WHERE d.id = chat_messages.document_id 
+    AND (d.user_id = auth.uid()::text OR d.user_id IS NULL)
+  )
+);
+
 
 -- ==============================================================================
 -- Migration for existing databases:

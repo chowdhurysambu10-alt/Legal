@@ -13,10 +13,16 @@ from core.rag_service import rag_service
 from core.gemini_service import gemini_service
 from core.supabase_client import db_client
 
+ENVIRONMENT = os.getenv("ENVIRONMENT", "development").lower()
+IS_PRODUCTION = ENVIRONMENT in ("production", "prod")
+
 app = FastAPI(
     title="Legal AI Assistant API",
     description="Backend microservice for Legal Document Parsing, ChromaDB RAG, and Gemini Legal Insights",
-    version="1.0.0"
+    version="1.0.0",
+    docs_url=None if IS_PRODUCTION else "/docs",
+    redoc_url=None if IS_PRODUCTION else "/redoc",
+    openapi_url=None if IS_PRODUCTION else "/openapi.json"
 )
 
 # Parse CORS Origins from env
@@ -50,7 +56,8 @@ async def root():
     return {
         "service": "Legal AI API",
         "version": "1.0.0",
-        "docs_url": "/docs",
+        "environment": ENVIRONMENT,
+        "docs_url": "/docs" if not IS_PRODUCTION else None,
         "health_url": "/api/health",
         "endpoints": {
             "upload_pdf": "POST /api/upload",
@@ -79,6 +86,7 @@ async def health_check():
 
     return {
         "status": "healthy" if system_healthy else "error",
+        "environment": ENVIRONMENT,
         "database_connected": db_connected,
         "error_message": db_status.get("error") if not db_connected else None,
         "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -90,19 +98,21 @@ async def health_check():
     }
 
 
-@app.post("/api/debug/toggle-db")
-async def toggle_db_simulated(connected: bool = True):
-    """Debug route to simulate database connection loss/restoration for UI verification."""
-    db_client.simulated_disconnected = not connected
-    return {
-        "simulated_disconnected": db_client.simulated_disconnected,
-        "database_connected": not db_client.simulated_disconnected
-    }
+# Debug routes are strictly restricted to local development
+if not IS_PRODUCTION:
+    @app.post("/api/debug/toggle-db")
+    async def toggle_db_simulated(connected: bool = True):
+        """Debug route to simulate database connection loss/restoration for UI verification."""
+        db_client.simulated_disconnected = not connected
+        return {
+            "simulated_disconnected": db_client.simulated_disconnected,
+            "database_connected": not db_client.simulated_disconnected
+        }
 
 
 if __name__ == "__main__":
     import uvicorn
     port = int(os.getenv("PORT", 8000))
     host = os.getenv("HOST", "0.0.0.0")
-    print(f"Starting Legal AI FastAPI server on {host}:{port}")
-    uvicorn.run("main:app", host=host, port=port, reload=True)
+    print(f"Starting Legal AI FastAPI server on {host}:{port} ({ENVIRONMENT} mode)")
+    uvicorn.run("main:app", host=host, port=port, reload=not IS_PRODUCTION)

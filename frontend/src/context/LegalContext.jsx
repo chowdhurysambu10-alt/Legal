@@ -82,21 +82,25 @@ export function LegalProvider({ children }) {
   const refreshHealth = async () => {
     try {
       const h = await checkHealth();
-      setHealth(h);
-      if (!h || h.status === 'error' || h.database_connected === false || h.components?.database?.connected === false) {
-        const isDbDown = h?.database_connected === false || h?.components?.database?.connected === false;
-        setDbConnected(!isDbDown);
-        const errDetail = h?.error_message || h?.detail || h?.components?.database?.error || (isDbDown ? 'Database disconnected' : 'Technical problem detected');
-        setError(errDetail);
-      } else {
-        setDbConnected(true);
-        setError(null);
-      }
+      const isDbDown = !h || h.status === 'error' || h.database_connected === false || h.components?.database?.connected === false;
+      const errDetail = isDbDown ? (h?.error_message || h?.detail || h?.components?.database?.error || 'Database disconnected') : null;
+
+      setDbConnected((prev) => (prev !== !isDbDown ? !isDbDown : prev));
+      setError((prev) => (prev !== errDetail ? errDetail : prev));
+      setHealth((prev) => {
+        if (prev && prev.status === h?.status && prev.database_connected === h?.database_connected) {
+          return prev; // Retain identical reference to prevent component re-render cascading
+        }
+        return h;
+      });
       return h;
     } catch (err) {
-      setDbConnected(false);
-      setError('Backend service offline. Technical problem detected.');
-      setHealth({ status: 'error', database_connected: false, detail: 'Connection refused' });
+      setDbConnected((prev) => (prev !== false ? false : prev));
+      setError((prev) => (prev !== 'Backend service offline. Technical problem detected.' ? 'Backend service offline. Technical problem detected.' : prev));
+      setHealth((prev) => {
+        if (prev && prev.status === 'error' && prev.database_connected === false) return prev;
+        return { status: 'error', database_connected: false, detail: 'Connection refused' };
+      });
       return null;
     }
   };
@@ -122,7 +126,7 @@ export function LegalProvider({ children }) {
     };
     init();
 
-    // Periodic heartbeat check every 5s for real-time status & session validation
+    // Heartbeat check every 30s for non-intrusive status & session validation
     const interval = setInterval(async () => {
       refreshHealth();
       if (user && !user.isGuest) {
@@ -134,7 +138,7 @@ export function LegalProvider({ children }) {
           } catch (e) {}
         }
       }
-    }, 5000);
+    }, 30000);
 
     return () => clearInterval(interval);
   }, [user?.id]);
@@ -179,6 +183,12 @@ export function LegalProvider({ children }) {
       authRes = await loginUserApi(email, password);
     }
     const loggedInUser = authRes.user;
+    if (authRes.access_token) {
+      loggedInUser.access_token = authRes.access_token;
+      try {
+        localStorage.setItem('legal_ai_token', authRes.access_token);
+      } catch (e) {}
+    }
     setUser(loggedInUser);
     try {
       localStorage.setItem('legal_ai_user', JSON.stringify(loggedInUser));
@@ -195,10 +205,12 @@ export function LegalProvider({ children }) {
       name: 'Guest Reviewer',
       role: 'Guest Counsel',
       isGuest: true,
+      access_token: 'guest_session_token'
     };
     setUser(guestUser);
     try {
       localStorage.setItem('legal_ai_user', JSON.stringify(guestUser));
+      localStorage.setItem('legal_ai_token', 'guest_session_token');
     } catch (e) {}
   };
 
@@ -206,6 +218,7 @@ export function LegalProvider({ children }) {
     setUser(null);
     try {
       localStorage.removeItem('legal_ai_user');
+      localStorage.removeItem('legal_ai_token');
     } catch (e) {}
   };
 

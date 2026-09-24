@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   UploadCloud,
   FileText,
@@ -20,7 +20,45 @@ export default function UploadModal({ isOpen, onClose }) {
   const [compareFiles, setCompareFiles] = useState([]);
   const fileInputRef = useRef(null);
   const compareInputRef = useRef(null);
+  const modalRef = useRef(null);
   const navigate = useNavigate();
+
+  // WCAG 2.1: Escape key dismissal and focus trap
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+
+      // Focus trap
+      if (e.key === 'Tab' && modalRef.current) {
+        const focusable = modalRef.current.querySelectorAll(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (e.shiftKey && document.activeElement === first) {
+          last.focus();
+          e.preventDefault();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          first.focus();
+          e.preventDefault();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    setTimeout(() => {
+      modalRef.current?.querySelector('button')?.focus();
+    }, 50);
+
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
 
   if (!isOpen) return null;
 
@@ -101,12 +139,18 @@ export default function UploadModal({ isOpen, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#18201a]/60 backdrop-blur-xs p-4">
+    <div
+      ref={modalRef}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="upload-contract-modal-title"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[#18201a]/60 backdrop-blur-xs p-4"
+    >
       <div className="bg-white w-full max-w-xl rounded-3xl border border-[#dce8da] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         {/* Modal Header */}
         <div className="flex items-center justify-between p-5 border-b border-[#e9f0e6] bg-[#fafcf9]">
           <div>
-            <h3 className="text-base font-bold text-[#18201a] font-serif-editorial">
+            <h3 id="upload-contract-modal-title" className="text-base font-bold text-[#18201a] font-serif-editorial">
               Upload Legal Contract
             </h3>
             <p className="text-xs text-[#526a54] mt-0.5">
@@ -117,9 +161,10 @@ export default function UploadModal({ isOpen, onClose }) {
             type="button"
             onClick={onClose}
             disabled={uploading}
+            aria-label="Close modal"
             className="text-[#6d8870] hover:text-[#18201a] p-1.5 rounded-full hover:bg-[#eef5ec] transition-colors"
           >
-            <X size={18} />
+            <X size={18} aria-hidden="true" />
           </button>
         </div>
 
@@ -269,9 +314,27 @@ export default function UploadModal({ isOpen, onClose }) {
           )}
 
           {error && (
-            <div className="mt-4 p-3 rounded-xl bg-[#fdf2f2] border border-[#f7d4d4] flex items-center gap-2 text-xs text-[#a82d2d]">
-              <AlertCircle size={15} className="shrink-0 text-[#b32b2b]" />
-              <span>{error}</span>
+            <div className="mt-4 p-3.5 rounded-2xl bg-[#fdf2f2] border border-[#f7d4d4] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-[#a82d2d]">
+              <div className="flex items-center gap-2">
+                <AlertCircle size={16} className="shrink-0 text-[#b32b2b]" />
+                <span className="font-medium">{error}</span>
+              </div>
+              <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                <button
+                  type="button"
+                  onClick={() => { setError(null); fileInputRef.current?.click(); }}
+                  className="px-3 py-1 rounded-full bg-white border border-[#f5c6c6] text-[#9b2121] font-bold hover:bg-[#fee2e2] cursor-pointer"
+                >
+                  Try Again
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setError(null)}
+                  className="px-2 py-1 text-[#a82d2d] hover:underline cursor-pointer"
+                >
+                  Dismiss
+                </button>
+              </div>
             </div>
           )}
         </div>
