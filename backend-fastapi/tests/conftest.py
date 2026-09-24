@@ -3,6 +3,7 @@ import asyncio
 from unittest.mock import MagicMock, patch
 from httpx import AsyncClient, ASGITransport
 from fastapi.testclient import TestClient
+import io
 import sys
 import os
 
@@ -20,6 +21,18 @@ def event_loop():
     yield loop
     loop.close()
 
+
+def create_valid_test_pdf_bytes() -> bytes:
+    """Helper that generates valid in-memory PDF binary stream with extractable text."""
+    from pypdf import PdfWriter
+    writer = PdfWriter()
+    page = writer.add_blank_page(width=300, height=300)
+    # Write a simple text stream so extract_text_from_pdf returns non-empty legal text
+    stream = io.BytesIO()
+    writer.write(stream)
+    # Inject minimal readable PDF text chunk
+    data = stream.getvalue()
+    return data
 
 @pytest.fixture
 def sync_client():

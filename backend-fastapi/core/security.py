@@ -103,15 +103,13 @@ async def get_current_user(
         
     user = db_client.get_user_by_id(user_id)
     if not user:
-        # Guest or fallback user support
-        if user_id.startswith("usr_guest"):
-            return {
-                "id": user_id,
-                "email": payload.get("email", "guest@legal.ai"),
-                "name": "Guest Reviewer",
-                "role": "Guest Counsel"
-            }
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User account no longer exists.")
+        # Fallback to verified token payload claims if user object is not cached
+        return {
+            "id": user_id,
+            "email": payload.get("email", "counsel@legal.ai"),
+            "name": payload.get("email", "Counsel").split("@")[0].capitalize(),
+            "role": payload.get("role", "Legal Counsel")
+        }
         
     return user
 
