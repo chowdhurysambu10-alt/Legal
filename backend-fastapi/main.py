@@ -26,44 +26,43 @@ app = FastAPI(
 )
 
 # Explicit CORS Configuration
-# In production, require explicit origins from CORS_ORIGINS. Localhost origins are only allowed in development.
-cors_origins_env = os.getenv("CORS_ORIGINS", "")
+cors_origins_env = os.getenv("CORS_ORIGINS", "*")
 configured_origins = [origin.strip() for origin in cors_origins_env.split(",") if origin.strip()]
 
-if IS_PRODUCTION:
-    # Production allowlist: explicit origins plus Vercel deployment regex
-    allowed_origins = configured_origins
+# In development or production, allow Vercel domains and any specified origins
+if not configured_origins or "*" in configured_origins:
+    allowed_origins = [
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:8000",
+    ]
     origin_regex = r"^https://.*\.vercel\.app$"
 else:
-    # Development: allow local frontend servers
     allowed_origins = configured_origins + [
         "http://localhost:5173",
         "http://localhost:3000",
         "http://127.0.0.1:5173",
         "http://127.0.0.1:8000",
     ]
-    origin_regex = r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$"
+    origin_regex = r"^https://.*\.vercel\.app$"
 
-if IS_PRODUCTION:
-    ALLOWED_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
-    ALLOWED_HEADERS = [
-        "Content-Type",
-        "Authorization",
-        "Accept",
-        "Origin",
-        "X-Requested-With",
-    ]
-else:
-    ALLOWED_METHODS = ["*"]
-    ALLOWED_HEADERS = ["*"]
+ALLOWED_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+ALLOWED_HEADERS = [
+    "Content-Type",
+    "Authorization",
+    "Accept",
+    "Origin",
+    "X-Requested-With",
+]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
     allow_origin_regex=origin_regex,
     allow_credentials=True,
-    allow_methods=ALLOWED_METHODS,
-    allow_headers=ALLOWED_HEADERS,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Include Routers
