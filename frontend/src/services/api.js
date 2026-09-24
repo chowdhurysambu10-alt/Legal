@@ -54,23 +54,30 @@ export async function safeFetch(url, options = {}, timeoutMs = 25000) {
 }
 
 export async function checkHealth() {
-  try {
-    const res = await safeFetch(`${API_BASE}/health`, {}, 6000);
-    if (!res.ok) {
-      const errData = await res.json().catch(() => ({}));
-      return {
-        status: 'error',
-        database_connected: false,
-        detail: errData.error_message || errData.detail || `Server responded with status ${res.status}`
-      };
+  // Free tier Render instances sleep after 15 min and take 15-45s to wake up on the first request
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const res = await safeFetch(`${API_BASE}/health`, {}, attempt === 0 ? 15000 : 35000);
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        return {
+          status: 'error',
+          database_connected: false,
+          detail: errData.error_message || errData.detail || `Server responded with status ${res.status}`
+        };
+      }
+      return await res.json();
+    } catch (err) {
+      if (attempt === 1) {
+        return {
+          status: 'error',
+          database_connected: false,
+          detail: err.message || 'Unable to connect to backend server'
+        };
+      }
+      // Brief pause before wake-up retry
+      await new Promise((r) => setTimeout(r, 1000));
     }
-    return await res.json();
-  } catch (err) {
-    return {
-      status: 'error',
-      database_connected: false,
-      detail: err.message || 'Unable to connect to backend server'
-    };
   }
 }
 
