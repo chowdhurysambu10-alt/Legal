@@ -40,17 +40,20 @@ def test_upload_malicious_path_traversal_filename_sanitized(sync_client, mock_db
     writer.write(stream)
     pdf_bytes = stream.getvalue()
 
+    from core.security import create_access_token
+    token = create_access_token(user_id="test-user-uuid", email="test@firm.com")
+
     response = sync_client.post(
         "/api/upload",
         files={"file": ("../../../../etc/passwd.pdf", io.BytesIO(pdf_bytes), "application/pdf")},
-        data={"use_sample": "false"}
+        data={"use_sample": "false"},
+        headers={"Authorization": f"Bearer {token}"}
     )
-    # The file should be saved with a clean base filename stripped of path traversals
-    if response.status_code == 200:
-        saved_filename = response.json()["document"]["filename"]
-        assert ".." not in saved_filename
-        assert "/" not in saved_filename
-        assert "\\" not in saved_filename
+    assert response.status_code == 200
+    saved_filename = response.json()["document"]["filename"]
+    assert ".." not in saved_filename
+    assert "/" not in saved_filename
+    assert "\\" not in saved_filename
 
 
 def test_upload_oversized_pdf_rejected_with_413(sync_client):

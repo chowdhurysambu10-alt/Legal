@@ -8,10 +8,13 @@ from fastapi.testclient import TestClient
 # Ingestion Endpoint: /api/upload
 # ---------------------------------------------------------------------------
 def test_upload_sample_contract_payload_structure(sync_client, mock_db, mock_gemini, mock_rag):
-    """Validates the /api/upload response format and database persistence."""
+    """Validates the /api/upload response format and database persistence for sample contract."""
+    from core.security import create_access_token
+    token = create_access_token(user_id="auth-user-999", email="counsel@firm.com")
     response = sync_client.post(
         "/api/upload",
-        data={"use_sample": "true", "user_id": "auth-user-999"}
+        data={"use_sample": "true"},
+        headers={"Authorization": f"Bearer {token}"}
     )
     assert response.status_code == 200
     data = response.json()
@@ -39,11 +42,14 @@ def test_upload_non_pdf_file_rejected(sync_client):
 
 def test_upload_corrupted_pdf_file_rejected(sync_client):
     """Validates corrupted/unparseable PDF rejection."""
+    from core.security import create_access_token
+    token = create_access_token(user_id="test-user-uuid", email="counsel@firm.com")
     corrupted_data = io.BytesIO(b"%PDF-1.4\nCorrupted content completely invalid \x00\xFF")
     response = sync_client.post(
         "/api/upload",
         files={"file": ("corrupt.pdf", corrupted_data, "application/pdf")},
-        data={"use_sample": "false"}
+        data={"use_sample": "false"},
+        headers={"Authorization": f"Bearer {token}"}
     )
     assert response.status_code in [400, 422, 500]
 

@@ -103,6 +103,15 @@ export default function DocumentHistory({
                 <div className="flex items-center justify-between text-[11px] text-slate-500 pl-9.5">
                   <span>{formatSize(doc.file_size)}</span>
                   <span>{formatDate(doc.upload_date)}</span>
+                  {doc.overall_risk_score && (
+                    <span className={`inline-flex items-center text-[10px] font-bold px-1.5 py-0.2 rounded-md ${
+                      doc.overall_risk_score.toUpperCase() === 'HIGH' || doc.overall_risk_score.toUpperCase() === 'CRITICAL'
+                        ? 'bg-rose-50 text-rose-700'
+                        : 'bg-slate-100 text-slate-600'
+                    }`}>
+                      {doc.overall_risk_score.toUpperCase()} RISK
+                    </span>
+                  )}
                   <span className="inline-flex items-center text-[10px] font-medium px-1.5 py-0.2 rounded-md bg-slate-100 text-slate-600">
                     {doc.chunk_count || 1} chunks
                   </span>

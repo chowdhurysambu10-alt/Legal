@@ -39,7 +39,7 @@ describe('RiskFlagsCard Accessibility & Display', () => {
   it('filters risks accurately when severity tab is selected', () => {
     render(<RiskFlagsCard riskFlags={mockFlags} />);
     
-    const highTab = screen.getByRole('button', { name: /HIGH/i });
+    const highTab = screen.getByRole('button', { name: /^HIGH$/ });
     fireEvent.click(highTab);
 
     expect(screen.getByText(/Section 5 Indemnity/i)).toBeInTheDocument();

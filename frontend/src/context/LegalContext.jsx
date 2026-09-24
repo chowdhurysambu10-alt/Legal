@@ -10,7 +10,7 @@ import {
   checkUserSession,
 } from '../services/api';
 
-const LegalContext = createContext(null);
+export const LegalContext = createContext(null);
 
 export function LegalProvider({ children }) {
   const [health, setHealth] = useState(null);
