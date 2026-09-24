@@ -291,10 +291,12 @@ RECENT CONVERSATION HISTORY:
 
 INSTRUCTIONS:
 1. Provide a direct, professional, and easily readable answer formatted in clean Markdown.
-2. If answering about contract provisions, quote relevant clauses or key numbers directly and note the page number.
-3. Be conversational, natural, and helpful (like a knowledgeable legal advisor in a chat). Do NOT write stiff boilerplate phrases like "Regarding your inquiry (question)".
-4. If the contract is silent on the question, state that clearly and provide standard commercial contract guidance.
-5. Conclude with actionable advice or next steps if appropriate.
+2. LANGUAGE REQUIREMENT: If the user asks in Bengali (বাংলা), Hindi (हिन्दी), Spanish, French, German, Arabic, or specifies a language, respond ENTIRELY in that requested language. Translate explanations, advice, and recommendations naturally so the user understands every detail clearly.
+3. If answering about contract provisions, quote relevant clauses or key numbers directly and note the page number.
+4. Be conversational, natural, and helpful (like a knowledgeable legal advisor in a chat). Do NOT write stiff boilerplate phrases like "Regarding your inquiry (question)".
+5. If the contract is silent on the question, state that clearly and provide standard commercial contract guidance.
+6. Conclude with actionable advice or next steps if appropriate.
+
 """
         answer_text = self._generate_with_gemini(prompt)
         
@@ -545,11 +547,39 @@ This legal agreement establishes the contractual terms, obligations, and risk al
 
         doc_name = contract_metadata.get("filename", "the contract")
 
+        # Check if question requests Bengali, Hindi, or other language
+        q_lower = question.lower()
+        is_bn = "bangla" in q_lower or "bengali" in q_lower or any('\u0980' <= ch <= '\u09FF' for ch in question)
+        is_hi = "hindi" in q_lower or any('\u0900' <= ch <= '\u097F' for ch in question)
+
         # Synthesize answer from top chunks
         if context_chunks:
             top_chunk = context_chunks[0]["text"]
             page_num = context_chunks[0].get("metadata", {}).get("page", 1)
-            answer = f"""Based on the contract text in **{doc_name}** (**Page {page_num}**):
+            if is_bn:
+                answer = f"""**{doc_name}** চুক্তির তথ্য অনুসারে (**পৃষ্ঠা {page_num}**):
+
+> *"{top_chunk[:300]}..."*
+
+### বিশ্লেষণ ও গুরুত্বপূর্ণ শর্তাবলী:
+উপরের অংশে আপনার জিজ্ঞাসিত বিষয় সম্পর্কিত নির্দিষ্ট শর্তাবলী উল্লেখ করা হয়েছে। অনুগ্রহ করে এই ধারার নোটিশ সময়সীমা, দায়বদ্ধতা এবং মূল বাধ্যবাধকতাগুলো যাচাই করে নিন।
+
+### আইনি পরামর্শ ও পরবর্তী পদক্ষেপ:
+1. **ধারার অবস্থান:** চুক্তিপত্রের **পৃষ্ঠা {page_num}**-এ বিদ্যমান।
+2. **পর্যালোচনা পরামর্শ:** কোনো নির্দিষ্ট সময়সীমা বা আর্থিক পরিমাণের বাধ্যবাধকতা থাকলে তা স্বাক্ষর করার আগে নিশ্চিত করুন।"""
+            elif is_hi:
+                answer = f"""**{doc_name}** अनुबंध के अनुसार (**पृष्ठ {page_num}**):
+
+> *"{top_chunk[:300]}..."*
+
+### विश्लेषण एवं मुख्य विवरण:
+उपर्युक्त अंश में आपकी पूछताछ से संबंधित अनुबंध की शर्तें दी गई हैं। कृपया इस धारा में उल्लिखित समय सीमा, देनदारियों और दायित्वों की समीक्षा करें।
+
+### कानूनी सुझाव:
+1. **धारा का स्थान:** अनुबंध के **पृष्ठ {page_num}** पर उपलब्ध है।
+2. **समीक्षा टिप:** हस्ताक्षर करने से पहले यह सुनिश्चित करें कि सभी वित्तीय और नोटिस की शर्तें आपकी अपेक्षाओं के अनुरूप हों।"""
+            else:
+                answer = f"""Based on the contract text in **{doc_name}** (**Page {page_num}**):
 
 > *"{top_chunk[:300]}..."*
 
@@ -560,7 +590,22 @@ The excerpt above outlines the agreed conditions regarding your inquiry. Please 
 1. **Clause Location:** Found on **Page {page_num}**.
 2. **Review Tip:** Verify that any deadlines, amounts, or notice obligations align with your expectations before finalizing."""
         else:
-            answer = f"""I searched *{doc_name}* for **"{question}"**, but did not find an explicit matching clause in the uploaded text.
+            if is_bn:
+                answer = f"""আমি *{doc_name}* চুক্তিপত্রে **"{question}"** অনুসন্ধান করেছি, কিন্তু কোনো নির্দিষ্ট ধারা খুঁজে পাওয়া যায়নি।
+
+### ব্যবহারিক পরামর্শ:
+- এই বিষয়ে চুক্তিটি নীরব রয়েছে।
+- কোনো শর্ত চুক্তিতে স্পষ্ট না থাকলে তা সাধারণ চুক্তি আইন অনুযায়ী বিবেচনা করা হয়।
+- প্রয়োজনে অপরপক্ষের সাথে আলোচনা করে একটি অতিরিক্ত সংশোধনী (Addendum) যোগ করুন।"""
+            elif is_hi:
+                answer = f"""मैंने *{doc_name}* अनुबंध में **"{question}"** खोजा, लेकिन कोई प्रत्यक्ष धारा नहीं मिली।
+
+### व्यावहारिक सलाह:
+- अनुबंध इस विशेष बिंदु पर मौन प्रतीत होता है।
+- वाणिज्यिक अनुबंध सिद्धांतों के अनुसार, मौन शर्तों की व्याख्या वैधानिक नियमों के आधार पर की जाती है।
+- स्पष्टता के लिए संबंधित पक्ष से बात करके एक लिखित परिशिष्ट जोड़ें।"""
+            else:
+                answer = f"""I searched *{doc_name}* for **"{question}"**, but did not find an explicit matching clause in the uploaded text.
 
 ### Practical Advice:
 - The agreement appears silent on this specific item.
@@ -572,6 +617,7 @@ The excerpt above outlines the agreed conditions regarding your inquiry. Please 
             "citations": citations,
             "confidence": "Medium" if context_chunks else "Low"
         }
+
 
 
 # Global singleton instance

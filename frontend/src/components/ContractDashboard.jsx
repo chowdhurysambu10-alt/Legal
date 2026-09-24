@@ -42,7 +42,10 @@ import {
   getLocalizedCategoryName,
   getLocalizedOverviewTitle,
   getLocalizedLabel,
-  getLocalizedBadgeCategory
+  getLocalizedBadgeCategory,
+  getLocalizedClause,
+  getLocalizedSummary,
+  getLanguageInstruction
 } from '../utils/translations';
 
 function renderHighlightIcon(iconName, size = 15) {
@@ -294,7 +297,9 @@ export default function ContractDashboard({
     setAiLoading(true);
 
     try {
-      const res = await askRagQuestion(document.id, q);
+      const languagePrompt = getLanguageInstruction(language);
+      const enhancedQuestion = languagePrompt ? `${q}${languagePrompt}` : q;
+      const res = await askRagQuestion(document.id, enhancedQuestion);
       setChatHistory((prev) =>
         prev.map((item, idx) =>
           idx === prev.length - 1
@@ -302,6 +307,7 @@ export default function ContractDashboard({
             : item
         )
       );
+
     } catch (err) {
       setChatHistory((prev) =>
         prev.map((item, idx) =>
@@ -535,9 +541,10 @@ export default function ContractDashboard({
               <span className="font-extrabold text-[#224b26] shrink-0 uppercase tracking-wider text-xs bg-[#e4f2e0] px-2.5 py-1 rounded">
                 {t.summary}
               </span>
-              <span className="truncate">{renderMarkdown(data.quickSummaryBanner)}</span>
+              <span className="truncate">{renderMarkdown(getLocalizedSummary(data.quickSummaryBanner, language))}</span>
             </div>
           )}
+
 
           {/* Deal Cards Container: Smooth Scroll Bar by default & expandable grid on View All */}
           <div
@@ -629,7 +636,8 @@ export default function ContractDashboard({
                 </p>
               </div>
             ) : (
-              data.clauses.map((clause) => {
+              data.clauses.map((rawClause) => {
+              const clause = getLocalizedClause(rawClause, language);
               const isExpanded = selectedClauseId === clause.id;
               return (
                 <div
@@ -648,6 +656,7 @@ export default function ContractDashboard({
                         {clause.sectionRef}
                       </span>
                     </div>
+
 
                     {/* Clause Title */}
                     <h3 className="text-base sm:text-lg font-extrabold text-[#18201a] mb-2.5 leading-snug">

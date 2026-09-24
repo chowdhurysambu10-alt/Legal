@@ -789,3 +789,230 @@ export function getLocalizedBadgeCategory(category, lang = 'en') {
   if (c.includes('UTILITIES') || c.includes('EXPENSES')) return t.expensesUtilities;
   return category || t.terms;
 }
+
+/**
+ * High-precision multilingual translations for legal clauses
+ */
+const CLAUSE_TRANSLATIONS = {
+  bn: {
+    // 1. Absence of Express Limitation of Liability
+    'absence of express limitation of liability': {
+      title: 'স্পষ্ট দায়বদ্ধতা সীমাবদ্ধতার অনুপস্থিতি (Absence of Express Limitation of Liability)',
+      whatItMeans: 'কোনো নির্দিষ্ট দায়বদ্ধতার সীমা না থাকলে, কোনো পক্ষ চুক্তিভঙ্গ করলে আইনের অধীনে সীমাহীন আর্থিক ক্ষতির মুখোমুখি হতে পারে।',
+      whyItMatters: 'পূর্ববর্তী ১২ মাসে প্রদত্ত মোট পারিশ্রমিক বা ভাড়ার সমপরিমাণ একটি সর্বোচ্চ দায়বদ্ধতার সীমা (Liability Cap) যুক্ত করার সুপারিশ করা হচ্ছে।',
+      whoItAffects: 'দায়বদ্ধতার শর্ত (Liability Term)',
+      sectionRef: 'দায়বদ্ধতা ধারা (Liability Clause)'
+    },
+    // 2. Termination Notice Requirements & Cure Periods
+    'termination notice requirements & cure periods': {
+      title: 'চুক্তি সমাপ্তির নোটিশ এবং সংশোধনের সময়সীমা (Termination Notice & Cure Periods)',
+      whatItMeans: 'চুক্তি সমাপ্তির শর্তাবলী নির্ধারণ করে কোনো ত্রুটি বা অপরপক্ষের ইচ্ছায় কীভাবে চুক্তি বাতিল করা যাবে। অল্প সময়ের নোটিশ দিলে সমস্যা সমাধানের সময় পাওয়া যায় না।',
+      whyItMatters: 'চুক্তি তাৎক্ষণিক বাতিলের আগে বাধ্যতামূলক ৩০ দিনের লিখিত নোটিশ এবং প্রতিকারের সময় থাকা নিশ্চিত করুন।',
+      whoItAffects: 'চুক্তি সমাপ্তি শর্ত (Termination Term)',
+      sectionRef: 'চুক্তি সমাপ্তি ধারা (Termination Clause)'
+    },
+    // 3. Ambiguous or Unspecified Governing Law
+    'ambiguous or unspecified governing law': {
+      title: 'অস্পষ্ট বা অনির্দিষ্ট প্রযোজ্য আইন (Ambiguous or Unspecified Governing Law)',
+      whatItMeans: 'আইনগত অধিকার স্পষ্টভাবে নির্দিষ্ট না থাকলে কোনো বিবাদের ক্ষেত্রে একাধিক আদালত বা এলাকায় দীর্ঘ মামলার ঝুঁকি তৈরি হয়।',
+      whyItMatters: 'স্পষ্টভাবে স্থানীয় রাজ্য বা নির্দিষ্ট আদালতের এখতিয়ারযুক্ত প্রযোজ্য আইন উল্লেখ করুন।',
+      whoItAffects: 'আইনগত শর্ত (Compliance Term)',
+      sectionRef: 'আইন ধারা (Compliance Clause)'
+    },
+    // 4. Broad Indemnification & Defense Obligations
+    'broad indemnification & defense obligations': {
+      title: 'ব্যাপক ক্ষতিপূরণ ও প্রতিরক্ষা বাধ্যবাধকতা (Broad Indemnification)',
+      whatItMeans: 'একতরফা ক্ষতিপূরণ ধারা থাকলে আপনি তৃতীয় পক্ষের যেকোনো দাবি বা খরচের জন্য অযৌক্তিকভাবে দায়ী হতে পারেন।',
+      whyItMatters: 'পারস্পরিক ক্ষতিপূরণ ধারা আলোচনা করুন এবং নিজস্ব খরচের সর্বোচ্চ সীমা বেঁধে দিন।',
+      whoItAffects: 'ক্ষতিপূরণ শর্ত (Indemnity Term)',
+      sectionRef: 'ক্ষতিপূরণ ধারা (Indemnity Clause)'
+    },
+    // 5. Restrictive Covenants & Non-Solicitation
+    'restrictive covenants & non-solicitation': {
+      title: 'কঠোর বিধিনিষেধ এবং নন-সলিসিটেশন (Restrictive Covenants)',
+      whatItMeans: 'কাজের বাইরে অন্যান্য সুযোগ গ্রহণ বা ক্লায়েন্ট ও কর্মীদের সাথে যোগাযোগের ওপর নিষেধাজ্ঞা আরোপ করে।',
+      whyItMatters: 'শুধুমাত্র মূল দায়িত্বের সাথে জড়িত ক্ষেত্রে বিধিনিষেধ সীমাবদ্ধ রাখুন।',
+      whoItAffects: 'সম্মতি শর্ত (Compliance Term)',
+      sectionRef: 'সম্মতি ধারা (Compliance Clause)'
+    }
+  },
+  hi: {
+    'absence of express limitation of liability': {
+      title: 'स्पष्ट देयता सीमा का अभाव (Absence of Express Limitation of Liability)',
+      whatItMeans: 'स्पष्ट देयता सीमा के बिना, कथित उल्लंघन की स्थिति में वित्तीय जोखिम कानून के तहत असीमित हो सकता है।',
+      whyItMatters: 'पिछले 12 महीनों में भुगतान किए गए कुल शुल्क के बराबर एक मानक देयता सीमा (Liability Cap) तय करने की सिफारिश की जाती है।',
+      whoItAffects: 'देयता शर्त (Liability Term)',
+      sectionRef: 'देयता खंड (Liability Clause)'
+    },
+    'termination notice requirements & cure periods': {
+      title: 'समाप्ति सूचना आवश्यकताएं और सुधार अवधि (Termination Notice & Cure Periods)',
+      whatItMeans: 'समाप्ति प्रावधान यह निर्धारित करते हैं कि कोई भी पक्ष अनुबंध कैसे समाप्त कर सकता है। छोटी सूचना अवधि सुधार के लिए अपर्याप्त समय छोड़ सकती है।',
+      whyItMatters: 'सुनिश्चित करें कि अनुबंध समाप्त करने से पहले अनिवार्य 30 दिनों का लिखित नोटिस और सुधार की अवधि दी जाए।',
+      whoItAffects: 'समाप्ति शर्त (Termination Term)',
+      sectionRef: 'समाप्ति खंड (Termination Clause)'
+    },
+    'ambiguous or unspecified governing law': {
+      title: 'अस्पष्ट या अनिर्दिष्ट लागू कानून (Ambiguous Governing Law)',
+      whatItMeans: 'क्षेत्राधिकार की अनिश्चितता विवाद की स्थिति में अनावश्यक कानूनी मुकदमेबाजी के जोखिम पैदा करती है।',
+      whyItMatters: 'स्पष्ट रूप से लागू कानून और स्थानीय अदालत के क्षेत्राधिकार को नामित करें।',
+      whoItAffects: 'अनुपालन शर्त (Compliance Term)',
+      sectionRef: 'अनुपालन खंड (Compliance Clause)'
+    },
+    'broad indemnification & defense obligations': {
+      title: 'व्यापक क्षतिपूर्ति एवं दायित्व (Broad Indemnification)',
+      whatItMeans: 'एकतरफा क्षतिपूर्ति प्रावधान आपको तीसरे पक्ष के दावों और कानूनी शुल्क के प्रति अत्यधिक उत्तरदायी बना सकते हैं।',
+      whyItMatters: 'पारस्परिक क्षतिपूर्ति पर बातचीत करें और अधिकतम दायित्व की सीमा तय करें।',
+      whoItAffects: 'क्षतिपूर्ति शर्त (Indemnity Term)',
+      sectionRef: 'क्षतिपूर्ति खंड (Indemnity Clause)'
+    },
+    'restrictive covenants & non-solicitation': {
+      title: 'प्रतिबंधात्मक शर्तें (Restrictive Covenants)',
+      whatItMeans: 'यह अन्य अवसरों या कर्मचारियों के संपर्क पर सख्त पाबंदियां लगाता है।',
+      whyItMatters: 'प्रतिबंधों को केवल आवश्यक परियोजना कर्मचारियों तक ही सीमित रखें।',
+      whoItAffects: 'अनुपालन शर्त (Compliance Term)',
+      sectionRef: 'अनुपालन खंड (Compliance Clause)'
+    }
+  },
+  es: {
+    'absence of express limitation of liability': {
+      title: 'Ausencia de Limitación Expresa de Responsabilidad',
+      whatItMeans: 'Sin un límite explícito de responsabilidad, la exposición económica ante cualquier incumplimiento carece de tope legal.',
+      whyItMatters: 'Se recomienda fijar un tope estándar de responsabilidad vinculado a los honorarios abonados en los últimos 12 meses.',
+      whoItAffects: 'Término de Responsabilidad',
+      sectionRef: 'Cláusula de Responsabilidad'
+    },
+    'termination notice requirements & cure periods': {
+      title: 'Requisitos de Notificación de Rescisión y Periodos de Subsanación',
+      whatItMeans: 'Las disposiciones de rescisión rigen la salida de cualquiera de las partes. Un aviso breve reduce el tiempo para subsanar faltas.',
+      whyItMatters: 'Asegúrese de incluir un periodo obligatorio de subsanación de 30 días por escrito antes de la rescisión.',
+      whoItAffects: 'Término de Rescisión',
+      sectionRef: 'Cláusula de Rescisión'
+    },
+    'ambiguous or unspecified governing law': {
+      title: 'Ley Aplicable Ambigua o No Especificada',
+      whatItMeans: 'La incertidumbre jurisdiccional genera riesgos procesales y disputas sobre el tribunal competente.',
+      whyItMatters: 'Designe de forma explícita la ley rectora y la jurisdicción exclusiva de los tribunales correspondientes.',
+      whoItAffects: 'Término de Cumplimiento',
+      sectionRef: 'Cláusula de Cumplimiento'
+    }
+  },
+  fr: {
+    'absence of express limitation of liability': {
+      title: 'Absence de Limitation Expresse de Responsabilité',
+      whatItMeans: 'Sans plafond explicite de responsabilité, l\'exposition financière en cas de manquement contractuel n\'est pas plafonnée.',
+      whyItMatters: 'Insérer un plafond standard de responsabilité équivalant aux montants versés au cours des 12 derniers mois.',
+      whoItAffects: 'Clause de Responsabilité',
+      sectionRef: 'Clause de Responsabilité'
+    },
+    'termination notice requirements & cure periods': {
+      title: 'Conditions de Préavis de Résiliation et Délai de Régularisation',
+      whatItMeans: 'Ces clauses régissent les modalités de résiliation. Un préavis trop court empêche de remédier aux défaillances mineures.',
+      whyItMatters: 'Exiger un préavis écrit de 30 jours avec délai de régularisation avant toute résiliation.',
+      whoItAffects: 'Clause de Résiliation',
+      sectionRef: 'Clause de Résiliation'
+    },
+    'ambiguous or unspecified governing law': {
+      title: 'Droit Applicable Ambigu ou Non Spécifié',
+      whatItMeans: 'L\'incertitude sur la loi applicable multiplie les risques de litiges judiciaires quant aux juridictions compétentes.',
+      whyItMatters: 'Désigner expressément le droit applicable et les tribunaux compétents exclusifs.',
+      whoItAffects: 'Clause de Conformité',
+      sectionRef: 'Clause de Conformité'
+    }
+  },
+  de: {
+    'absence of express limitation of liability': {
+      title: 'Fehlen einer ausdrücklichen Haftungsbeschränkung',
+      whatItMeans: 'Ohne eine ausdrückliche Haftungsobergrenze ist das finanzielle Risiko im Streitfall unbegrenzt.',
+      whyItMatters: 'Verhandeln Sie eine Haftungsobergrenze in Höhe der in den letzten 12 Monaten gezahlten Gesamtbeträge.',
+      whoItAffects: 'Haftungsbestimmung',
+      sectionRef: 'Haftungsklausel'
+    },
+    'termination notice requirements & cure periods': {
+      title: 'Kündigungsfristen und Nachbesserungsfristen',
+      whatItMeans: 'Regelt die Vertragsauflösung. Zu kurze Kündigungsfristen bieten nicht genügend Zeit für Nachbesserungen.',
+      whyItMatters: 'Eine 30-tägige schriftliche Nachfrist vor einer Kündigung aus wichtigem Grund vereinbaren.',
+      whoItAffects: 'Kündigungsbestimmung',
+      sectionRef: 'Kündigungsklausel'
+    },
+    'ambiguous or unspecified governing law': {
+      title: 'Unklares oder nicht festgelegtes anwendbares Recht',
+      whatItMeans: 'Rechtsunsicherheit führt im Streitfall zu erheblichen Gerichtsstands- und Prozessrisiken.',
+      whyItMatters: 'Ausdrücklich ein anwendbares Recht und einen ausschließlichen Gerichtsstand vereinbaren.',
+      whoItAffects: 'Compliance-Bestimmung',
+      sectionRef: 'Compliance-Klausel'
+    }
+  },
+  ar: {
+    'absence of express limitation of liability': {
+      title: 'غياب بند تحديد المسؤولية الصريح (Absence of Limitation of Liability)',
+      whatItMeans: 'في حال عدم وجود سقف محدد للمسؤولية، تصبح المطالبات المالية غير مقيدة بسقف محدد بموجب القانون.',
+      whyItMatters: 'يوصى بإدراج سقف قياسي للمسؤولية لا يتجاوز إجمالي المبالغ المدفوعة خلال الـ 12 شهراً السابقة.',
+      whoItAffects: 'بند المسؤولية (Liability Term)',
+      sectionRef: 'شرط المسؤولية (Liability Clause)'
+    },
+    'termination notice requirements & cure periods': {
+      title: 'شروط إخطار إنهاء العقد وفترة تصحيح الأوضاع',
+      whatItMeans: 'تحدد شروط الإنهاء كيفية خروج أي من الطرفين من العقد. الإخطار القصير لا يتيح وقتاً كافياً لتصحيح المخالفات.',
+      whyItMatters: 'احرص على اشتراط إشعار خطي مسبق مدته 30 يوماً للتصحيح قبل الإنهاء الفوري.',
+      whoItAffects: 'بند الإنهاء (Termination Term)',
+      sectionRef: 'شرط الإنهاء (Termination Clause)'
+    },
+    'ambiguous or unspecified governing law': {
+      title: 'القانون الحاكم غير محدد أو غامض',
+      whatItMeans: 'يؤدي عدم وضوح جهة الاختصاص القضائي إلى مخاطر نزاعات قضائية معقدة.',
+      whyItMatters: 'حدد بوضوح القانون الواجب التطبيق وجهة الاختصاص القضائي الحصري.',
+      whoItAffects: 'بند الامتثال (Compliance Term)',
+      sectionRef: 'شرط الامتثال (Compliance Clause)'
+    }
+  }
+};
+
+/**
+ * Returns localized clause details for the current active language
+ */
+export function getLocalizedClause(clause, lang = 'en') {
+  if (!clause || lang === 'en') return clause;
+  const langTable = CLAUSE_TRANSLATIONS[lang];
+  if (!langTable) return clause;
+
+  const key = (clause.title || '').trim().toLowerCase();
+  for (const [pattern, item] of Object.entries(langTable)) {
+    if (key.includes(pattern) || pattern.includes(key)) {
+      return {
+        ...clause,
+        title: item.title || clause.title,
+        whatItMeans: item.whatItMeans || clause.whatItMeans,
+        whyItMatters: item.whyItMatters || clause.whyItMatters,
+        whoItAffects: item.whoItAffects || clause.whoItAffects,
+        sectionRef: item.sectionRef || clause.sectionRef
+      };
+    }
+  }
+  return clause;
+}
+
+/**
+ * Translates summary banner tags and labels
+ */
+export function getLocalizedSummary(bannerText, lang = 'en') {
+  if (!bannerText || lang === 'en') return bannerText;
+  const t = translations[lang] || translations.en;
+  let translated = bannerText;
+  translated = translated.replace(/\bTenant:\s*/gi, `${t.tenantName}: `);
+  translated = translated.replace(/\bLandlord:\s*/gi, `${t.landlordName}: `);
+  translated = translated.replace(/\bRent:\s*/gi, `${t.monthlyRent}: `);
+  translated = translated.replace(/\bPremises:\s*/gi, `${t.propertyAddress}: `);
+  return translated;
+}
+
+/**
+ * Returns targeted AI prompt language instructions
+ */
+export function getLanguageInstruction(lang = 'en') {
+  const langObj = SUPPORTED_LANGUAGES.find((l) => l.code === lang);
+  const name = langObj ? langObj.name : 'English';
+  const native = langObj ? langObj.native : 'English';
+  if (lang === 'en') return '';
+  return ` [IMPORTANT: Respond fully in ${name} (${native}) language. Provide clear, simple, and helpful analysis in ${name} so the user understands every detail.]`;
+}
+
