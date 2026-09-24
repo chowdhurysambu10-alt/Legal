@@ -48,7 +48,8 @@ export async function safeFetch(url, options = {}, timeoutMs = 25000) {
       throw new Error('You appear to be offline. Please check your internet connection.');
     }
 
-    throw new Error('Unable to connect to the legal AI service. Please ensure the backend server is running on http://127.0.0.1:8000.');
+    const targetHint = API_BASE.startsWith('http') ? API_BASE : 'the backend server';
+    throw new Error(`Unable to connect to the legal AI service. Please ensure ${targetHint} is running and reachable.`);
   }
 }
 
