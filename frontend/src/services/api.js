@@ -1,5 +1,6 @@
 const rawApiUrl = (import.meta.env.VITE_API_URL || '').trim();
-const API_BASE = rawApiUrl ? `${rawApiUrl.replace(/\/+$/, '')}/api` : '/api';
+// In browser development, if VITE_API_URL is omitted, use relative '/api' (proxied by Vite)
+export const API_BASE = rawApiUrl ? `${rawApiUrl.replace(/\/+$/, '')}/api` : '/api';
 
 export function getAuthToken() {
   try {
