@@ -22,6 +22,17 @@ export function LegalProvider({ children }) {
   const [error, setError] = useState(null);
   const [dbConnected, setDbConnected] = useState(true);
 
+  // Auth state persisted in localStorage
+  const [user, setUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem('legal_ai_user');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.warn('Could not read user from localStorage', e);
+    }
+    return null;
+  });
+
   // Language state persisted in localStorage
   const [language, setLanguageState] = useState(() => {
     try {
