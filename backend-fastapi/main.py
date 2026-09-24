@@ -44,14 +44,18 @@ else:
     ]
     origin_regex = r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$"
 
-ALLOWED_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
-ALLOWED_HEADERS = [
-    "Content-Type",
-    "Authorization",
-    "Accept",
-    "Origin",
-    "X-Requested-With",
-]
+if IS_PRODUCTION:
+    ALLOWED_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+    ALLOWED_HEADERS = [
+        "Content-Type",
+        "Authorization",
+        "Accept",
+        "Origin",
+        "X-Requested-With",
+    ]
+else:
+    ALLOWED_METHODS = ["*"]
+    ALLOWED_HEADERS = ["*"]
 
 app.add_middleware(
     CORSMiddleware,

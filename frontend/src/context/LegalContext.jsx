@@ -109,7 +109,6 @@ export function LegalProvider({ children }) {
   useEffect(() => {
     const init = async () => {
       setLoading(true);
-      // Verify if authenticated user still exists in the database
       if (user && !user.isGuest) {
         const liveUser = await checkUserSession(user.id);
         if (!liveUser) {
@@ -117,12 +116,16 @@ export function LegalProvider({ children }) {
           setUser(null);
           try {
             localStorage.removeItem('legal_ai_user');
+            localStorage.removeItem('legal_ai_token');
           } catch (e) {}
           setLoading(false);
           return;
         }
       }
-      await Promise.all([refreshHealth(), refreshDocuments(user?.id)]);
+      await refreshHealth();
+      if (user?.id) {
+        await refreshDocuments(user.id);
+      }
       setLoading(false);
     };
     init();

@@ -48,25 +48,7 @@ export async function safeFetch(url, options = {}, timeoutMs = 25000) {
       throw new Error('You appear to be offline. Please check your internet connection.');
     }
 
-    // In local development: if relative /api request failed (e.g. Vite proxy glitch or connection refused),
-    // automatically try direct http://127.0.0.1:8000 fallback to keep the app operational.
-    if (url.startsWith('/api') && typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
-      try {
-        const fallbackUrl = `http://127.0.0.1:8000${url}`;
-        const fallbackController = new AbortController();
-        const fallbackId = setTimeout(() => fallbackController.abort(), timeoutMs);
-        const fallbackResponse = await fetch(fallbackUrl, {
-          ...options,
-          signal: fallbackController.signal
-        });
-        clearTimeout(fallbackId);
-        return fallbackResponse;
-      } catch (fallbackErr) {
-        // Fallback also failed, proceed to error
-      }
-    }
-
-    throw new Error('Unable to connect to the legal AI service. Please ensure the backend server is running.');
+    throw new Error('Unable to connect to the legal AI service. Please ensure the backend server is running on http://127.0.0.1:8000.');
   }
 }
 
