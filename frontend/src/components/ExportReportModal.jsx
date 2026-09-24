@@ -1,8 +1,44 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Download, Printer, X, FileText, CheckCircle2, ShieldAlert } from 'lucide-react';
 
 export default function ExportReportModal({ isOpen, onClose, document, analysis }) {
+  const modalRef = useRef(null);
+
+  // WCAG 2.1 Focus Trap & Keyboard Escape
+  useEffect(() => {
+    if (!isOpen || !document || !analysis) return;
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') onClose();
+
+      if (e.key === 'Tab' && modalRef.current) {
+        const focusable = modalRef.current.querySelectorAll(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (e.shiftKey && document.activeElement === first) {
+          last.focus();
+          e.preventDefault();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          first.focus();
+          e.preventDefault();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    setTimeout(() => {
+      modalRef.current?.querySelector('button')?.focus();
+    }, 50);
+
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose, document, analysis]);
+
   if (!isOpen || !document || !analysis) return null;
+
 
   const handlePrint = () => {
     window.print();
@@ -13,13 +49,19 @@ export default function ExportReportModal({ isOpen, onClose, document, analysis 
   const keyClauses = analysis.key_clauses || {};
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 print:p-0 print:bg-white">
+    <div
+      ref={modalRef}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="export-modal-title"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 print:p-0 print:bg-white"
+    >
       <div className="bg-white w-full max-w-3xl rounded-2xl border border-slate-200 shadow-xl max-h-[90vh] flex flex-col overflow-hidden print:border-none print:shadow-none print:max-h-none">
         {/* Modal Header (hidden during print) */}
         <div className="flex items-center justify-between p-5 border-b border-slate-100 bg-slate-50/50 print:hidden">
           <div className="flex items-center gap-2">
-            <FileText size={18} className="text-blue-600" />
-            <h3 className="text-sm font-bold text-slate-900">Legal Executive Summary Report</h3>
+            <FileText size={18} className="text-blue-600" aria-hidden="true" />
+            <h3 id="export-modal-title" className="text-sm font-bold text-slate-900">Legal Executive Summary Report</h3>
           </div>
           <div className="flex items-center gap-2">
             <button

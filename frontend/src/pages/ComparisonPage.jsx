@@ -185,12 +185,28 @@ export default function ComparisonPage() {
           </span>
         </div>
       ) : error ? (
-        <div className="p-4 rounded-2xl bg-[#fdf2f2] border border-[#f5cfcf] text-xs text-[#962626]">
-          {error}
+        <div className="p-5 rounded-2xl bg-[#fdf2f2] border border-[#f5cfcf] text-xs text-[#962626] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+          <div className="flex items-center gap-2">
+            <AlertTriangle size={16} className="text-[#dc2626] shrink-0" />
+            <span className="font-semibold">{error}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => runComparison(doc1Id, doc2Id)}
+            className="px-3.5 py-1.5 rounded-full bg-white border border-[#fca5a5] text-[#b91c1c] font-bold hover:bg-[#fee2e2] transition-colors cursor-pointer self-start sm:self-auto shrink-0 shadow-2xs"
+          >
+            Retry Comparison
+          </button>
         </div>
       ) : !comparison ? (
-        <div className="bg-white rounded-3xl border border-[#dfe8dc] p-12 text-center text-[#69826c] text-xs">
-          Select two documents above to generate side-by-side clause differences.
+        <div className="bg-white rounded-3xl border border-[#dfe8dc] p-12 text-center text-[#526f55] text-xs flex flex-col items-center shadow-xs">
+          <div className="w-12 h-12 rounded-2xl bg-[#f0f6ee] border border-[#d6e5d3] flex items-center justify-center text-[#2d6e27] mb-3">
+            <Files size={22} className="text-[#3b872b]" />
+          </div>
+          <h3 className="text-sm font-bold text-[#18201a]">Select Two Agreements to Compare</h3>
+          <p className="text-xs text-[#627d65] max-w-sm mt-1">
+            Choose a reference contract and a target contract from the dropdowns above to analyze clause variations, risk deviations, and inconsistencies.
+          </p>
         </div>
       ) : (
         <div className="flex flex-col gap-6">

@@ -36,6 +36,9 @@ def verify_password(stored_password_hash: str, provided_password: str) -> bool:
         return False
 
 
+from core.security import create_access_token, get_current_user
+
+
 @router.post("/register")
 async def register(req: RegisterRequest):
     email = req.email.strip().lower()
@@ -48,10 +51,13 @@ async def register(req: RegisterRequest):
 
     pwd_hash = hash_password(req.password)
     user = db_client.create_user(email=email, password_hash=pwd_hash, full_name=req.full_name)
+    access_token = create_access_token(user_id=user["id"], email=user["email"], role="Legal Counsel")
 
     return {
         "status": "success",
         "message": "Account created successfully",
+        "access_token": access_token,
+        "token_type": "bearer",
         "user": {
             "id": user["id"],
             "email": user["email"],
@@ -73,9 +79,13 @@ async def login(req: LoginRequest):
     if not stored_hash or not verify_password(stored_hash, req.password):
         raise HTTPException(status_code=401, detail="Invalid password. Please try again.")
 
+    access_token = create_access_token(user_id=user["id"], email=user["email"], role="Legal Counsel")
+
     return {
         "status": "success",
         "message": "Signed in successfully",
+        "access_token": access_token,
+        "token_type": "bearer",
         "user": {
             "id": user["id"],
             "email": user["email"],
@@ -86,33 +96,46 @@ async def login(req: LoginRequest):
     }
 
 
-@router.get("/user/{user_id}")
-async def get_user_profile(user_id: str):
-    user = db_client.get_user_by_id(user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+@router.get("/me")
+async def get_current_user_profile(current_user: dict = Depends(get_current_user)):
+    """Returns the authenticated user derived strictly from the verified session token."""
     return {
         "user": {
-            "id": user["id"],
-            "email": user["email"],
-            "name": user.get("full_name"),
-            "created_at": user.get("created_at")
+            "id": current_user["id"],
+            "email": current_user["email"],
+            "name": current_user.get("full_name") or current_user.get("name"),
+            "created_at": current_user.get("created_at")
+        }
+    }
+
+
+@router.get("/user/{user_id}")
+async def get_user_profile(user_id: str, current_user: dict = Depends(get_current_user)):
+    """Verifies that the user can only query their own account information (IDOR Prevention)."""
+    if str(current_user.get("id")) != str(user_id):
+        raise HTTPException(status_code=403, detail="Forbidden: You can only access your own profile.")
+    return {
+        "user": {
+            "id": current_user["id"],
+            "email": current_user["email"],
+            "name": current_user.get("full_name") or current_user.get("name"),
+            "created_at": current_user.get("created_at")
         }
     }
 
 
 @router.delete("/user/{user_id}")
-async def delete_user_account(user_id: str):
+async def delete_user_account(user_id: str, current_user: dict = Depends(get_current_user)):
     """
-    Permanently deletes a user account and cascades to delete all their:
-    - Uploaded PDF contracts
-    - AI analyses and risk scores
-    - Chat message history
-    - Vector embeddings in ChromaDB
+    Permanently deletes a user account with strict authorization check.
+    Prevents unauthorized account deletion attacks.
     """
+    if str(current_user.get("id")) != str(user_id):
+        raise HTTPException(status_code=403, detail="Forbidden: You can only delete your own account.")
     success = db_client.delete_user(user_id)
     return {
         "status": "success",
         "message": f"User {user_id} and all associated data permanently deleted from database."
     }
+
 

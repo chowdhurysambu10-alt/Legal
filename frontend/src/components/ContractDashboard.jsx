@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   FileText,
   Sparkles,
@@ -6,11 +6,8 @@ import {
   ArrowLeft,
   X,
   Send,
-  UploadCloud,
   CheckCircle2,
-  AlertTriangle,
   RotateCcw,
-  MessageSquare,
   Bot,
   User,
   BookOpen,
@@ -18,7 +15,6 @@ import {
   Check,
   DollarSign,
   Building,
-  MapPin,
   Shield,
   Calendar,
   Clock,
@@ -28,7 +24,6 @@ import {
   Home,
   Briefcase,
   Scale,
-  Layers,
   ChevronDown,
   ChevronUp,
   Globe
@@ -36,6 +31,9 @@ import {
 import { parseImportantClauses } from '../utils/contractIntelligence';
 import { askRagQuestion, getChatHistory, clearChatHistory } from '../services/api';
 import { useLegal } from '../context/LegalContext';
+import RiskFlagsCard from './RiskFlagsCard';
+import ChecklistCard from './ChecklistCard';
+import UserJourneyRoadmap from './UserJourneyRoadmap';
 import {
   SUPPORTED_LANGUAGES,
   translations,
@@ -193,7 +191,8 @@ export default function ContractDashboard({
 }) {
   const { language = 'en', setLanguage } = useLegal();
   const t = translations[language] || translations.en;
-  const data = parseImportantClauses(document, analysis);
+  // Memoize heavy contract intelligence parsing to avoid re-running on input state updates
+  const data = useMemo(() => parseImportantClauses(document, analysis), [document, analysis]);
 
   // Selected clause for detailed inline view
   const [selectedClauseId, setSelectedClauseId] = useState(null);
@@ -204,9 +203,6 @@ export default function ContractDashboard({
   // Deal highlights view toggle
   const [showAllHighlights, setShowAllHighlights] = useState(false);
 
-  // Card view mode: 'scroll' (horizontal scrollable bar) or 'grid' (classic grid)
-  const [cardLayoutMode, setCardLayoutMode] = useState('scroll');
-
   // AI Chatbot State (Side Panel)
   const [aiQuestion, setAiQuestion] = useState('');
   const [chatHistory, setChatHistory] = useState([]);
@@ -216,16 +212,8 @@ export default function ContractDashboard({
   const aiInputRef = useRef(null);
   const chatStreamEndRef = useRef(null);
   const cardsScrollRef = useRef(null);
-
-
-  useEffect(() => {
-    if (!document?.id) return;
-    loadChatMessages(document.id);
-  }, [document?.id]);
-
-  useEffect(() => {
-    chatStreamEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [chatHistory, aiLoading]);
+  const isAskingRef = useRef(false);
+  const queryCacheRef = useRef(new Map());
 
   const loadChatMessages = async (docId) => {
     try {
@@ -261,6 +249,15 @@ export default function ContractDashboard({
     }
   };
 
+  useEffect(() => {
+    if (!document?.id) return;
+    loadChatMessages(document.id);
+  }, [document?.id]);
+
+  useEffect(() => {
+    chatStreamEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chatHistory, aiLoading]);
+
   const handleClearChat = async () => {
     if (!document?.id) return;
     try {
@@ -289,8 +286,21 @@ export default function ContractDashboard({
 
   const handleAskAI = async (queryText) => {
     const q = (queryText || aiQuestion).trim();
-    if (!q || !document?.id || aiLoading) return;
+    if (!q || !document?.id || isAskingRef.current || aiLoading) return;
 
+    // Check client-side session cache to avoid duplicate AI requests
+    const cacheKey = `${document.id}:${language}:${q.toLowerCase()}`;
+    if (queryCacheRef.current.has(cacheKey)) {
+      const cached = queryCacheRef.current.get(cacheKey);
+      setChatHistory((prev) => [
+        ...prev,
+        { question: q, answer: cached.answer, citations: cached.citations || [] }
+      ]);
+      setAiQuestion('');
+      return;
+    }
+
+    isAskingRef.current = true;
     const newEntry = { question: q, answer: null, citations: [] };
     setChatHistory((prev) => [...prev, newEntry]);
     setAiQuestion('');
@@ -300,6 +310,10 @@ export default function ContractDashboard({
       const languagePrompt = getLanguageInstruction(language);
       const enhancedQuestion = languagePrompt ? `${q}${languagePrompt}` : q;
       const res = await askRagQuestion(document.id, enhancedQuestion);
+      
+      // Store in client session cache
+      queryCacheRef.current.set(cacheKey, res);
+
       setChatHistory((prev) =>
         prev.map((item, idx) =>
           idx === prev.length - 1
@@ -314,7 +328,7 @@ export default function ContractDashboard({
           idx === prev.length - 1
             ? {
                 ...item,
-                answer: '⚠️ Unable to retrieve an answer at this time. Please check your backend connection.',
+                answer: `⚠️ **Unable to retrieve answer:** ${err.message || 'The AI service did not respond.'}\n\n*Tip: Try rephrasing your question or check your connection.*`,
                 citations: []
               }
             : item
@@ -322,6 +336,7 @@ export default function ContractDashboard({
       );
     } finally {
       setAiLoading(false);
+      isAskingRef.current = false;
     }
   };
 
@@ -380,6 +395,15 @@ export default function ContractDashboard({
           </button>
         </div>
       )}
+
+      {/* 6-Stage Problem Solver Journey Status */}
+      <UserJourneyRoadmap
+        currentStage={3}
+        onStageClick={(stageId) => {
+          if (stageId === 'upload' && onUploadClick) onUploadClick();
+          else if (stageId === 'rag') aiInputRef.current?.focus();
+        }}
+      />
 
       {/* ========================================================
           1. CONTRACT HEADER (Compact & Prominent)
@@ -754,6 +778,24 @@ export default function ContractDashboard({
             })
           )}
           </div>
+
+          {/* ========================================================
+              RISK DETECTION CARDS (High, Medium, Low breakdown)
+          ======================================================== */}
+          {analysis?.risk_flags && analysis.risk_flags.length > 0 && (
+            <div className="mt-4">
+              <RiskFlagsCard riskFlags={analysis.risk_flags} />
+            </div>
+          )}
+
+          {/* ========================================================
+              LEGAL CHECKLIST & AUDIT ROADMAP
+          ======================================================== */}
+          {analysis?.checklist && analysis.checklist.length > 0 && (
+            <div className="mt-2">
+              <ChecklistCard checklist={analysis.checklist} />
+            </div>
+          )}
         </div>
 
         {/* ========================================================
@@ -962,6 +1004,12 @@ export default function ContractDashboard({
                   )}
                   <span>{t.ask}</span>
                 </button>
+              </div>
+              <div className="flex items-center gap-1.5 mt-2.5 px-2 py-1 rounded-lg bg-[#f6f9f5] border border-[#e4eee2] text-[11px] text-[#5a765e]">
+                <Shield size={12} className="text-[#3b872b] shrink-0" />
+                <span>
+                  <strong>Notice:</strong> AI answers are assistive summaries based on document retrieval, not certified legal advice.
+                </span>
               </div>
             </div>
           </div>

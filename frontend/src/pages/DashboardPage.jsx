@@ -1,29 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   UploadCloud,
   FileText,
   Trash2,
   Search,
   Sparkles,
-  Plus,
   AlertTriangle,
   FolderOpen,
-  X,
-  ChevronRight,
   Scale,
   ArrowRight,
   Clock,
-  Layers,
-  Bot,
-  CheckCircle2,
-  ExternalLink,
-  ShieldCheck,
-  ShieldAlert
+  ChevronLeft,
+  ChevronRight,
+  Bot
 } from 'lucide-react';
 import { useLegal } from '../context/LegalContext';
 import { useNavigate } from 'react-router-dom';
 import { getDocumentDetails } from '../services/api';
 import ContractDashboard from '../components/ContractDashboard';
+import UserJourneyRoadmap from '../components/UserJourneyRoadmap';
 
 function formatUploadDate(isoString) {
   if (!isoString) return 'Recently uploaded';
@@ -167,17 +162,36 @@ export default function DashboardPage() {
     }
   };
 
-  // Filter documents by search and risk filter
-  const filteredDocs = documents.filter((doc) => {
-    const matchesSearch = doc.filename.toLowerCase().includes(searchTerm.toLowerCase());
-    const score = (doc.overall_risk_score || '').toUpperCase();
-    if (riskFilter === 'HIGH') return matchesSearch && (score.includes('HIGH') || score.includes('CRITICAL'));
-    if (riskFilter === 'MEDIUM') return matchesSearch && score.includes('MEDIUM');
-    if (riskFilter === 'LOW') return matchesSearch && score.includes('LOW');
-    return matchesSearch;
-  });
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 6;
 
-  const highRiskCount = documents.filter((d) => (d.overall_risk_score || '').toUpperCase().includes('HIGH')).length;
+  // Filter documents by search and risk filter with useMemo
+  const filteredDocs = useMemo(() => {
+    const term = searchTerm.toLowerCase().trim();
+    return documents.filter((doc) => {
+      const matchesSearch = !term || doc.filename.toLowerCase().includes(term);
+      const score = (doc.overall_risk_score || '').toUpperCase();
+      if (riskFilter === 'HIGH') return matchesSearch && (score.includes('HIGH') || score.includes('CRITICAL'));
+      if (riskFilter === 'MEDIUM') return matchesSearch && score.includes('MEDIUM');
+      if (riskFilter === 'LOW') return matchesSearch && score.includes('LOW');
+      return matchesSearch;
+    });
+  }, [documents, searchTerm, riskFilter]);
+
+  // Reset pagination when search or filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, riskFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredDocs.length / PAGE_SIZE));
+  const paginatedDocs = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return filteredDocs.slice(start, start + PAGE_SIZE);
+  }, [filteredDocs, currentPage, PAGE_SIZE]);
+
+  const highRiskCount = useMemo(() => {
+    return documents.filter((d) => (d.overall_risk_score || '').toUpperCase().includes('HIGH')).length;
+  }, [documents]);
 
   return (
     <div className="flex-1 max-w-7xl w-full mx-auto px-6 py-6 flex flex-col gap-6">
@@ -264,6 +278,17 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
+
+          {/* ========================================================
+              WORKFLOW ROADMAP: Legal Problem-Solving Journey
+          ======================================================== */}
+          <UserJourneyRoadmap
+            currentStage={1}
+            onStageClick={(stageId) => {
+              if (stageId === 'upload') setUploadModalOpen(true);
+              else if (documents.length > 0) setActiveDocId(documents[0].id);
+            }}
+          />
 
           {/* ========================================================
               2. OPTIONS TO CHOOSE (User Action Cards)
@@ -388,85 +413,138 @@ export default function DashboardPage() {
                     ? 'Upload your first legal agreement to see clause breakdowns, risk scores, and chat with AI.'
                     : `No contracts match your search "${searchTerm}".`}
                 </p>
-                {documents.length === 0 && (
+                {documents.length === 0 ? (
+                  <div className="flex items-center gap-3 flex-wrap justify-center">
+                    <button
+                      type="button"
+                      onClick={() => setUploadModalOpen(true)}
+                      className="btn-lime-pill px-5 py-2.5 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer shadow-xs"
+                    >
+                      <UploadCloud size={14} />
+                      <span>Upload First Contract</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleLoadSample}
+                      disabled={sampleLoading}
+                      className="px-4 py-2.5 rounded-full border border-[#cfdfcd] bg-[#f5f9f4] hover:bg-[#edf5ec] text-xs font-bold text-[#234c26] inline-flex items-center gap-1.5 cursor-pointer shadow-2xs transition-colors"
+                    >
+                      <Sparkles size={14} className="text-[#3b872b]" />
+                      <span>{sampleLoading ? 'Loading Sample...' : 'Load Sample Contract'}</span>
+                    </button>
+                  </div>
+                ) : (
                   <button
                     type="button"
-                    onClick={() => setUploadModalOpen(true)}
-                    className="btn-lime-pill px-5 py-2.5 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer shadow-xs"
+                    onClick={() => { setSearchTerm(''); setRiskFilter('ALL'); }}
+                    className="px-4 py-2 rounded-full border border-[#cfdfcd] bg-[#f5f9f4] hover:bg-[#edf5ec] text-xs font-bold text-[#234c26] cursor-pointer"
                   >
-                    <UploadCloud size={14} />
-                    <span>Upload First Contract</span>
+                    Clear Filters & Show All
                   </button>
                 )}
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredDocs.map((doc) => (
-                  <div
-                    key={doc.id}
-                    onClick={() => setActiveDocId(doc.id)}
-                    className="bg-white rounded-3xl border border-[#d8e6d5] p-5 shadow-xs hover:shadow-md hover:border-[#9ec99a] transition-all cursor-pointer group flex flex-col justify-between relative"
-                  >
-                    <div>
-                      {/* Top Badges & Delete */}
-                      <div className="flex items-center justify-between gap-2 mb-3">
-                        {getRiskBadge(doc.overall_risk_score)}
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {paginatedDocs.map((doc) => (
+                    <div
+                      key={doc.id}
+                      onClick={() => setActiveDocId(doc.id)}
+                      className="bg-white rounded-3xl border border-[#d8e6d5] p-5 shadow-xs hover:shadow-md hover:border-[#9ec99a] transition-all cursor-pointer group flex flex-col justify-between relative"
+                    >
+                      <div>
+                        {/* Top Badges & Delete */}
+                        <div className="flex items-center justify-between gap-2 mb-3">
+                          {getRiskBadge(doc.overall_risk_score)}
 
-                        <div className="flex items-center gap-1">
-                          <button
-                            type="button"
-                            onClick={(e) => handleDelete(doc.id, e)}
-                            disabled={deletingId === doc.id}
-                            className="p-1.5 rounded-lg text-[#7c9680] hover:text-[#dc2626] hover:bg-[#fee2e2] transition-colors cursor-pointer"
-                            title="Delete contract from history"
-                          >
-                            <Trash2 size={13} />
-                          </button>
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={(e) => handleDelete(doc.id, e)}
+                              disabled={deletingId === doc.id}
+                              className="p-1.5 rounded-lg text-[#7c9680] hover:text-[#dc2626] hover:bg-[#fee2e2] transition-colors cursor-pointer"
+                              title="Delete contract from history"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
                         </div>
+
+                        {/* Filename */}
+                        <div className="flex items-start gap-3 mb-2.5">
+                          <div className="w-9 h-9 rounded-xl bg-[#edf6ec] text-[#2c6e26] flex items-center justify-center shrink-0 mt-0.5 border border-[#d6e7d3]">
+                            <FileText size={17} />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <h4 className="text-base font-extrabold text-[#18201a] group-hover:text-[#2d6e27] transition-colors truncate" title={doc.filename}>
+                              {doc.filename}
+                            </h4>
+                            <span className="text-xs text-[#5f7b63] flex items-center gap-1 mt-0.5 font-medium">
+                              <Clock size={12} />
+                              {formatUploadDate(doc.upload_date)}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Meta Information */}
+                        <div className="flex items-center gap-3 text-xs text-[#446047] my-3 py-2 px-3 rounded-xl bg-[#f7faf6] border border-[#e5efe3] font-medium">
+                          <span><strong className="font-extrabold text-[#1c3320]">{doc.page_count || 1}</strong> pages</span>
+                          <span>&bull;</span>
+                          <span><strong className="font-extrabold text-[#1c3320]">{doc.chunk_count || 0}</strong> indexed clauses</span>
+                        </div>
+
+                        {/* Summary Snippet if available */}
+                        {doc.summary && (
+                          <p className="text-xs sm:text-[13px] text-[#415a45] line-clamp-2 leading-relaxed italic mb-3">
+                            "{doc.summary.replace(/###/g, '').replace(/\*\*/g, '').trim().slice(0, 140)}..."
+                          </p>
+                        )}
                       </div>
 
-                      {/* Filename */}
-                      <div className="flex items-start gap-3 mb-2.5">
-                        <div className="w-9 h-9 rounded-xl bg-[#edf6ec] text-[#2c6e26] flex items-center justify-center shrink-0 mt-0.5 border border-[#d6e7d3]">
-                          <FileText size={17} />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <h4 className="text-base font-extrabold text-[#18201a] group-hover:text-[#2d6e27] transition-colors truncate" title={doc.filename}>
-                            {doc.filename}
-                          </h4>
-                          <span className="text-xs text-[#5f7b63] flex items-center gap-1 mt-0.5 font-medium">
-                            <Clock size={12} />
-                            {formatUploadDate(doc.upload_date)}
-                          </span>
-                        </div>
+                      {/* Bottom Action Button */}
+                      <div className="pt-3.5 border-t border-[#edf4ec] flex items-center justify-between text-xs sm:text-sm font-bold text-[#2d6e27]">
+                        <span className="group-hover:underline flex items-center gap-1.5">
+                          <Bot size={15} className="text-[#3b872b]" />
+                          <span>Open Analysis & Chat</span>
+                        </span>
+                        <ArrowRight size={15} className="group-hover:translate-x-1 transition-transform" />
                       </div>
-
-                      {/* Meta Information */}
-                      <div className="flex items-center gap-3 text-xs text-[#446047] my-3 py-2 px-3 rounded-xl bg-[#f7faf6] border border-[#e5efe3] font-medium">
-                        <span><strong className="font-extrabold text-[#1c3320]">{doc.page_count || 1}</strong> pages</span>
-                        <span>&bull;</span>
-                        <span><strong className="font-extrabold text-[#1c3320]">{doc.chunk_count || 0}</strong> indexed clauses</span>
-                      </div>
-
-                      {/* Summary Snippet if available */}
-                      {doc.summary && (
-                        <p className="text-xs sm:text-[13px] text-[#415a45] line-clamp-2 leading-relaxed italic mb-3">
-                          "{doc.summary.replace(/###/g, '').replace(/\*\*/g, '').trim().slice(0, 140)}..."
-                        </p>
-                      )}
                     </div>
+                  ))}
+                </div>
 
-                    {/* Bottom Action Button */}
-                    <div className="pt-3.5 border-t border-[#edf4ec] flex items-center justify-between text-xs sm:text-sm font-bold text-[#2d6e27]">
-                      <span className="group-hover:underline flex items-center gap-1.5">
-                        <Bot size={15} className="text-[#3b872b]" />
-                        <span>Open Analysis & Chat</span>
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between pt-3 border-t border-[#dfe8dc] text-xs font-semibold text-[#48634c]">
+                    <span>
+                      Showing {((currentPage - 1) * PAGE_SIZE) + 1}–{Math.min(currentPage * PAGE_SIZE, filteredDocs.length)} of {filteredDocs.length} contracts
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                        disabled={currentPage === 1}
+                        className="p-1.5 rounded-lg border border-[#d6e5d3] bg-white text-[#2d6e27] disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#edf6ec] transition-colors cursor-pointer"
+                        title="Previous page"
+                      >
+                        <ChevronLeft size={16} />
+                      </button>
+                      <span className="px-3 py-1 rounded-lg bg-[#edf6ec] border border-[#d1e6ce] text-[#2d6e27] font-bold">
+                        Page {currentPage} of {totalPages}
                       </span>
-                      <ArrowRight size={15} className="group-hover:translate-x-1 transition-transform" />
+                      <button
+                        type="button"
+                        onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                        disabled={currentPage === totalPages}
+                        className="p-1.5 rounded-lg border border-[#d6e5d3] bg-white text-[#2d6e27] disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#edf6ec] transition-colors cursor-pointer"
+                        title="Next page"
+                      >
+                        <ChevronRight size={16} />
+                      </button>
                     </div>
                   </div>
-                ))}
-              </div>
+                )}
+              </>
             )}
           </div>
         </div>
