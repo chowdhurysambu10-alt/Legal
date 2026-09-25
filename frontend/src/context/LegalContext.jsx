@@ -148,20 +148,17 @@ export function LegalProvider({ children }) {
   }, [user?.id]);
 
   const uploadFile = async (file, useSample = false) => {
+    let t1, t2, t3;
     try {
       setUploading(true);
       setUploadProgressStep(0);
 
-      const t1 = setTimeout(() => setUploadProgressStep(1), 600);
-      const t2 = setTimeout(() => setUploadProgressStep(2), 1500);
-      const t3 = setTimeout(() => setUploadProgressStep(3), 2600);
+      t1 = setTimeout(() => setUploadProgressStep(1), 600);
+      t2 = setTimeout(() => setUploadProgressStep(2), 1500);
+      t3 = setTimeout(() => setUploadProgressStep(3), 2600);
 
       // Pass user?.id so the document is permanently linked to the user's history
       const res = await apiUploadDocument(file, useSample, user?.id);
-
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
 
       await refreshDocuments(user?.id);
       await refreshHealth();
@@ -170,6 +167,9 @@ export function LegalProvider({ children }) {
     } catch (err) {
       throw err;
     } finally {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
       setUploading(false);
     }
   };

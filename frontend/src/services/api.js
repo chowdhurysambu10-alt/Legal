@@ -97,7 +97,7 @@ export async function uploadDocument(file = null, useSample = false, userId = nu
     method: 'POST',
     headers: getAuthHeaders(),
     body: formData,
-  }, 45000); // Allow 45s for deep contract analysis
+  }, 90000); // Allow 90s for deep contract analysis, cold starts & Gemini processing
 
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
